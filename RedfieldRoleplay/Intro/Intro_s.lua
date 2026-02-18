@@ -1,0 +1,12 @@
+function spawnAfterIntro(player)
+	spawnPlayer(player,-204.96250915527,1212.2875976563,19.7421875)
+	setCameraTarget(player)
+	setElementModel(player,26)
+	setElementData(player,'Intro',1)
+	givePlayerMoney(player,5000)
+	setElementData(player,'Money',5000)
+	giveErfahrungspunkte(player,100)
+	showChat(player,true)
+end
+addEvent('spawnAfterIntro',true)
+addEventHandler('spawnAfterIntro',root,spawnAfterIntro)

@@ -1,0 +1,7 @@
+<map edf:definitions="editor_main">
+    <object id="object (fencesmallb) (1)" breakable="true" interior="0" alpha="255" model="970" doublesided="false" scale="1" dimension="0" posX="-178.60001" posY="1129.5" posZ="19.3" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (fencesmallb) (2)" breakable="true" interior="0" alpha="255" model="970" doublesided="false" scale="1" dimension="0" posX="-178.60001" posY="1129.5" posZ="20.3" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (fencesmallb) (3)" breakable="true" interior="0" alpha="255" model="970" doublesided="false" scale="1" dimension="0" posX="-178.60001" posY="1129.5" posZ="21.3" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (fencesmallb) (4)" breakable="true" interior="0" alpha="255" model="970" doublesided="false" scale="1" dimension="0" posX="-178.60001" posY="1129.5" posZ="22.3" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (subwaygate) (1)" breakable="true" interior="0" alpha="255" model="971" doublesided="false" scale="1" dimension="0" posX="-208.89999" posY="1055.4" posZ="22.8" rotX="90" rotY="0" rotZ="90"></object>
+</map>

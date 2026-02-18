@@ -1,0 +1,3 @@
+<map edf:definitions="editor_main">
+    <removeWorldObject id="removeWorldObject (burg_lkupdoor) (1)" radius="5.1075711" interior="0" model="5302" lodModel="0" posX="2740.78" posY="-2004.7184" posZ="14.9271" rotX="0" rotY="0" rotZ="0"></removeWorldObject>
+</map>
