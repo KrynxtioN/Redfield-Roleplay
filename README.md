@@ -13,7 +13,7 @@ Redfield Roleplay is a roleplay gamemode that was developed in 2016. The gamemod
 |comment-characters|2274|
 
 ### Gameplay and Screenshots
-* 
+* https://youtu.be/4x46MuJsvgQ
 
 <p align="center">
   <img src="Screenshots/1.png" width="350">
