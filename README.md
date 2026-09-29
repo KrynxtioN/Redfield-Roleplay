@@ -8,7 +8,7 @@ The gamemode provides a persistent roleplay environment with jobs, factions, veh
 
 ## 👤 Accounts & Progression
 
-Redfield Roleplay includes its own **registration and login system with MySQL persistence**.
+Redfield Roleplay includes its own registration and login system with MySQL persistence.
 
 Player data is permanently stored, including:
 
@@ -37,12 +37,9 @@ The job system is integrated with the economy and player progression systems.
 
 Redfield Roleplay includes multiple factions with their own vehicles, headquarters, equipment and gameplay features.
 
-Different faction types provide their own activities, including:
-
 - Police Department
 - Reporter
 - Criminal factions
-- Gang activities
 
 Police officers can use features such as duty equipment, wanted management, arrests and surveillance systems.
 
@@ -141,11 +138,7 @@ These systems provide additional opportunities to earn money, experience and oth
 
 Faction-specific activities such as transports and Gangwars provide additional gameplay for faction members.
 
-## 🛒 Shops & Interiors
-
-Different shops and interiors are available throughout the map.
-
-These include systems such as:
+## 🛒 Shops
 
 - 24/7 shops
 - Ammu-Nations
@@ -153,16 +146,6 @@ These include systems such as:
 - Vehicle dealerships
 - Tuning garages
 - Pay N Sprays
-- Government buildings
-- Faction headquarters
-
-Custom markers, interiors and map blips are used to make important locations easier to find.
-
-## 🗺️ Custom Blips
-
-Redfield Roleplay includes a custom map blip system with dedicated icons for important locations.
-
-These blips help players locate shops, jobs, dealerships, government buildings, factions and other gameplay locations.
 
 ## 🎮 Additional Systems
 
@@ -183,7 +166,6 @@ Redfield Roleplay includes several additional systems:
 - Custom chat
 - Faction chat
 - Real-time synchronization
-- Custom map blips
 - German and English language support
 
 ## 🌍 Languages
@@ -198,7 +180,6 @@ The gamemode supports:
 1. Place the Redfield Roleplay resource inside your MTA server's `resources` directory.
 2. Create/import the required database tables.
 3. Configure the MySQL database connection for your environment (Mysql/Mysql.lua).
-4. Configure any required server settings.
 5. Start the resource on your MTA server.
 
 ## 🎬 Media
