@@ -77,7 +77,6 @@ function StartTankwart(player)
 	addEventHandler("onVehicleStartExit",vehicle,function(exitingPlayer,seat)
 		if exitingPlayer == player and seat == 0 then
 			cancelEvent()
-			getChatBox(player,129)
 			infobox_func(player,getText(player,"Tankwart6"),0,255,0)
 		end
 	end)
