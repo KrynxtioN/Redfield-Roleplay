@@ -1,46 +1,52 @@
-local x,y=guiGetScreenSize()
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1440, sy / 900)
+local MAX_LEVEL = 100
 
-local EXPTabelle={
-[1]=600,
-[2]=1200,
-[3]=2400,
-[4]=4800,
-[5]=9600,
-[6]=19200,
-[7]=38400,
-[8]=76800,
-[9]=153600,
-}
+local function getRequiredEXP(level)
+	level = tonumber(level) or 1
+	return math.floor(500+(level^1.6)*350)
+end
+
+local function clamp(v, min, max)
+	return math.max(min, math.min(max, v))
+end
+
+local function drawHudBar(x, y, w, h, percent, text)
+	dxDrawRectangle(x, y, w, h, tocolor(0, 0, 0, 235), false)
+	dxDrawRectangle(x, y, w, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawRectangle(x + 4 * scale, y + 5 * scale, w - 8 * scale, h - 8 * scale, tocolor(25, 25, 25, 255), false)
+	dxDrawRectangle(x + 4 * scale, y + 5 * scale, (w - 8 * scale) * clamp(percent, 0, 1), h - 8 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 4 * scale, y, x + w - 4 * scale, y + h, tocolor(255, 255, 255, 255), 1, "default-bold", "center", "center", true, false, false)
+end
 
 function Leiste_func()
-	if(getElementData(localPlayer,"loggedin")==1)then
-		--if(getElementData(localPlayer,"redfieldClick")==false)then
-			local Hunger=getElementData(localPlayer,"Hunger")
-			local EXP=getElementData(localPlayer,"Erfahrungspunkte")
-			local Oxgen=getPedOxygenLevel(localPlayer)
-			local Level=getElementData(localPlayer,"Level")
-		
-			dxDrawRectangle(0*(x/1440), 857*(y/900), 1440*(x/1440), 51*(y/900), tocolor(0, 0, 0, 200), false)
-			dxDrawLine(0*(x/1440), 857*(y/900), 1439*(x/1440), 857*(y/900), tocolor(255, 255, 255, 255), 5, false)
-			dxDrawRectangle(1007*(x/1440), 866*(y/900), 414*(x/1440)/EXPTabelle[Level+1]*EXP, 30*(y/900), tocolor(1, 191, 193, 200), false)
-			dxDrawText(EXP.."/"..EXPTabelle[Level+1].." EXP", 1017*(x/1440), 871*(y/900), 1411*(x/1440), 890*(y/900), tocolor(255, 255, 255, 255), 1.50, "default-bold", "center", "center", false, false, false, false, false)
-			dxDrawLine(1007*(x/1440), 866*(y/900), 1419*(x/1440), 866*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(1009*(x/1440), 896*(y/900), 1421*(x/1440), 896*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(1007*(x/1440), 866*(y/900), 1007*(x/1440), 897*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(1419*(x/1440), 866*(y/900), 1419*(x/1440), 897*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawRectangle(17*(x/1440), 866*(y/900), 178*(x/1440)/100*Hunger, 30*(y/900), tocolor(0, 200, 0, 200), false)
-			dxDrawLine(17*(x/1440), 865*(y/900), 17*(x/1440), 896*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(195*(x/1440), 865*(y/900), 195*(x/1440), 896*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(17*(x/1440), 865*(y/900), 195*(x/1440), 865*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(17*(x/1440), 896*(y/900), 195*(x/1440), 896*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawRectangle(221*(x/1440), 865*(y/900), 178*(x/1440)/1000*Oxgen, 30*(y/900), tocolor(27, 136, 172, 200), false)
-			dxDrawLine(221*(x/1440), 865*(y/900), 221*(x/1440), 896*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(399*(x/1440), 866*(y/900), 399*(x/1440), 897*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(221*(x/1440), 865*(y/900), 399*(x/1440), 865*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawLine(221*(x/1440), 896*(y/900), 399*(x/1440), 896*(y/900), tocolor(255, 255, 255, 255), 2, false)
-			dxDrawText(Hunger.."% Hunger", 27*(x/1440), 871*(y/900), 185*(x/1440), 890*(y/900), tocolor(255, 255, 255, 255), 1.50, "default-bold", "center", "center", false, false, false, false, false)
-			dxDrawText(math.floor(Oxgen).."% Oxygen", 231*(x/1440), 871*(y/900), 389*(x/1440), 890*(y/900), tocolor(255, 255, 255, 255), 1.50, "default-bold", "center", "center", false, false, false, false, false)
-		--end
-    end
+	if not isPlayerMapVisible() then
+		if getElementData(localPlayer, "loggedin") ~= 1 then return end
+
+		local hunger = clamp(tonumber(getElementData(localPlayer, "Hunger")) or 0, 0, 100)
+		local exp = math.max(0, tonumber(getElementData(localPlayer, "Erfahrungspunkte")) or 0)
+		local oxygen = clamp(tonumber(getPedOxygenLevel(localPlayer)) or 0, 0, 1000)
+		local level = tonumber(getElementData(localPlayer, "Level")) or 1
+		local needed = level < MAX_LEVEL and getRequiredEXP(level) or nil
+
+		local hungerWidth = 140 * scale
+		local oxygenWidth = 140 * scale
+		local expWidth = 270 * scale
+		local gap = 8 * scale
+		local totalWidth = hungerWidth + oxygenWidth + expWidth + gap * 2
+		local height = 27 * scale
+		local x = (sx - totalWidth) / 2
+		local y = sy - height
+
+		drawHudBar(x, y, hungerWidth, height, hunger / 100, getText("HudHunger"):format(math.floor(hunger)))
+		drawHudBar(x + hungerWidth + gap, y, oxygenWidth, height, oxygen / 1000, getText("HudOxygen"):format(math.floor(oxygen / 10)))
+
+		if needed then
+			drawHudBar(x + hungerWidth + oxygenWidth + gap * 2, y, expWidth, height, exp / needed, getText("HudExp"):format(exp, needed))
+		else
+			drawHudBar(x + hungerWidth + oxygenWidth + gap * 2, y, expWidth, height, 1, getText("HudMaxLevel"))
+		end
+	end
 end
-addEventHandler("onClientRender",root,Leiste_func)
+
+addEventHandler("onClientRender", root, Leiste_func)

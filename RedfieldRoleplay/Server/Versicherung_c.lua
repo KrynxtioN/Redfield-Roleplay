@@ -1,60 +1,101 @@
-local versicherung = {button = {},window = {},label = {}}
+local versicherungOpen = false
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
+
+local function isCursorOnElement(x, y, w, h)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + w and cy >= y and cy <= y + h
+end
+
+local function getVersicherungLayout()
+	local w, h = 480 * scale, 300 * scale
+	local x, y = (sx - w) / 2, (sy - h) / 2
+	local padding = 15 * scale
+	return x, y, w, h, padding
+end
+
+local function drawButton(text, x, y, w, h)
+	local hover = isCursorOnElement(x, y, w, h)
+	dxDrawRectangle(x, y, w, h, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + h - 2 * scale, w, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + w - 8 * scale, y + h, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+end
+
+function renderVersicherung()
+	if not versicherungOpen then return end
+
+	local x, y, w, h, padding = getVersicherungLayout()
+	local contentW = w - padding * 2
+	local infoY = y + 52 * scale
+	local infoH = 105 * scale
+	local buttonW = contentW
+	local buttonH = 42 * scale
+	local actionY = y + 180 * scale
+	local closeY = actionY + buttonH + 10 * scale
+
+	dxDrawRectangle(x, y, w, h, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, w, 3 * scale, tocolor(0, 100, 200, 255), false)
+
+	dxDrawText(getText("Versicherung1"), x + padding, y + 10 * scale, x + w - padding, y + 43 * scale, tocolor(255, 255, 255, 255), 1.1 * scale, "default-bold", "center", "center", true)
+
+	dxDrawRectangle(x + padding, infoY, contentW, infoH, tocolor(20, 20, 20, 255), false)
+	dxDrawRectangle(x + padding, infoY, 3 * scale, infoH, tocolor(0, 100, 200, 255), false)
+	dxDrawText(getText("Versicherung2"), x + padding + 15 * scale, infoY + 10 * scale, x + w - padding - 15 * scale, infoY + infoH - 10 * scale, tocolor(220, 220, 220, 255), 1 * scale, "default-bold", "left", "center", true, true)
+
+	local actionText = tonumber(getElementData(localPlayer, "Versicherung")) == 1 and getText("Versicherung4") or getText("Versicherung3")
+	drawButton(actionText, x + padding, actionY, buttonW, buttonH)
+	drawButton(getText("Versicherung5"), x + padding, closeY, buttonW, buttonH)
+end
+
+function closeVersicherung()
+	if not versicherungOpen then return end
+
+	versicherungOpen = false
+	setElementData(localPlayer, "redfieldClick", false)
+	showCursor(false)
+	removeEventHandler("onClientRender", root, renderVersicherung)
+	removeEventHandler("onClientClick", root, versicherungClick)
+end
+
+function versicherungClick(button, state)
+	if not versicherungOpen or button ~= "left" or state ~= "up" then return end
+
+	local x, y, w, h, padding = getVersicherungLayout()
+	local contentW = w - padding * 2
+	local buttonH = 42 * scale
+	local actionY = y + 180 * scale
+	local closeY = actionY + buttonH + 10 * scale
+
+	if isCursorOnElement(x + padding, actionY, contentW, buttonH) then
+		if tonumber(getElementData(localPlayer, "Versicherung")) == 1 then
+			triggerServerEvent("versicherungStop", localPlayer)
+		else
+			triggerServerEvent("versicherung", localPlayer)
+		end
+		return
+	end
+
+	if isCursorOnElement(x + padding, closeY, contentW, buttonH) then
+		closeVersicherung()
+	end
+end
 
 function versicherungWindow()
-	if(not(isElement(versicherung.window[1])))then
-		if(getElementData(localPlayer,"redfieldClick")==false)then
-			setElementData(localPlayer,"redfieldClick",true)
-			showCursor(true)
-		
-			versicherung.window[1] = guiCreateStaticImage(0.39, 0.40, 0.22, 0.19, "Images/Background.png", true)
+	if versicherungOpen then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
 
-			versicherung.label[1] = guiCreateLabel(0.03, 0.15, 0.94, 0.31, "Hier können Sie eine Lebensversicherung abschließen, die pro Payday 750$ kostet. Die Versicherung deckt alle medizinischen Kosten, wenn Sie sterben.", true, versicherung.window[1])
-			guiSetFont(versicherung.label[1], "default-bold-small")
-			guiLabelSetHorizontalAlign(versicherung.label[1], "left", true)
-			versicherung.button[1] = guiCreateButton(0.19, 0.52, 0.62, 0.18, "Lebensversicherung abschließen", true, versicherung.window[1])
-			guiSetProperty(versicherung.button[1], "NormalTextColour", "FFAAAAAA")
-			versicherung.button[2] = guiCreateButton(0.19, 0.76, 0.62, 0.18, "Schließen", true, versicherung.window[1])
-			guiSetProperty(versicherung.button[2], "NormalTextColour", "FFAAAAAA")
-			
-			if(getElementData(localPlayer,"Language")==0)then
-				if(getElementData(localPlayer,"Versicherung")==1)then
-					guiSetText(versicherung.button[1],"Lebensversicherung kündigen")
-				end
-			else
-				guiSetText(versicherung.label[1],"Here you can take out a life insurance policy, which per Payday $ 750 costs. The insurance covers all medical expenses when you die.")
-				if(getElementData(localPlayer,"Versicherung")==0)then
-					guiSetText(versicherung.button[1],"Complete Life Insurance")
-				else
-					guiSetText(versicherung.button[1],"Terminate life insurance")
-				end
-				guiSetText(versicherung.button[2],"Close")
-			end
-			
-			addEventHandler("onClientGUIClick",versicherung.button[1],function()
-				if(getElementData(localPlayer,"Versicherung")==0)then
-					triggerServerEvent("versicherung",localPlayer,localPlayer)
-					if(getElementData(localPlayer,"Language")==0)then
-						guiSetText(versicherung.button[1],"Lebensversicherung kündigen")
-					else
-						guiSetText(versicherung.button[1],"Terminate life insurance")
-					end
-				else
-					triggerServerEvent("versicherungStop",localPlayer,localPlayer)
-					if(getElementData(localPlayer,"Language")==0)then
-						guiSetText(versicherung.button[1],"Lebensversicherung abschließen")
-					else
-						guiSetText(versicherung.button[1],"Complete Life Insurance")
-					end
-				end
-			end,false)
-			
-			addEventHandler("onClientGUIClick",versicherung.button[2],function()
-				setElementData(localPlayer,"redfieldClick",false)
-				showCursor(false)
-				destroyElement(versicherung.window[1])
-			end,false)
-		end
-    end
+	versicherungOpen = true
+	setElementData(localPlayer, "redfieldClick", true)
+	showCursor(true)
+	addEventHandler("onClientRender", root, renderVersicherung)
+	addEventHandler("onClientClick", root, versicherungClick)
 end
-addEvent("versicherungWindow",true)
-addEventHandler("versicherungWindow",root,versicherungWindow)
+addEvent("versicherungWindow", true)
+addEventHandler("versicherungWindow", root, versicherungWindow)
+
+addEventHandler("onClientPlayerWasted", localPlayer, function()
+	closeVersicherung()
+end)

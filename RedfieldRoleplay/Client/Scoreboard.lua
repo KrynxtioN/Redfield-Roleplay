@@ -1,201 +1,178 @@
-﻿local fraknames={
-[0]='Zivilist',
-[1]='Police Department',
-[2]='Yakuza',
-[3]='Biker',
-[4]='Reporter',
-[5]='Ballas',
-[6]='Surenos'
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
+local scroll = 0
+local visibleRows = 16
+local scoreboardVisible = false
+
+local factionNames = {
+	[0] = {[0] = "Zivilist", [1] = "Civilian"},
+	[1] = {[0] = "Police Department", [1] = "Police Department"},
+	[2] = {[0] = "Yakuza", [1] = "Yakuza"},
+	[3] = {[0] = "Biker", [1] = "Biker"},
+	[4] = {[0] = "Reporter", [1] = "Reporter"},
+	[5] = {[0] = "Ballas", [1] = "Ballas"},
+	[6] = {[0] = "Surenos", [1] = "Surenos"}
 }
 
-fcolors={}
-fcolors[-1] = {}
-	fcolors[-1][1] = 100
-	fcolors[-1][2] = 100
-	fcolors[-1][3] = 100
-fcolors[0] = {}
-	fcolors[0][1] = 255
-	fcolors[0][2] = 255
-	fcolors[0][3] = 255
-fcolors[1] = {}
-	fcolors[1][1] = 0
-	fcolors[1][2] = 200
-	fcolors[1][3] = 0
-fcolors[2] = {}
-	fcolors[2][1] = 0
-	fcolors[2][2] = 50
-	fcolors[2][3] = 255
-fcolors[3] = {}
-	fcolors[3][1] = 100
-	fcolors[3][2] = 50
-	fcolors[3][3] = 50
-fcolors[4] = {}
-	fcolors[4][1] = 250
-	fcolors[4][2] = 150
-	fcolors[4][3] = 0
-fcolors[5] = {}
-	fcolors[5][1] = 255
-	fcolors[5][2] = 0
-	fcolors[5][3] = 200
-fcolors[6] = {}
-	fcolors[6][1] = 200
-	fcolors[6][2] = 200
-	fcolors[6][3] = 0
+local factionColors = {
+	[-1] = {130, 130, 130},
+	[0] = {255, 255, 255},
+	[1] = {0, 200, 0},
+	[2] = {0, 100, 255},
+	[3] = {150, 100, 100},
+	[4] = {250, 150, 0},
+	[5] = {255, 0, 200},
+	[6] = {220, 220, 0}
+}
 
-local Scrollposition = 0
-local x,y = guiGetScreenSize()
+local function lang()
+	return tonumber(getElementData(localPlayer, "Language")) == 1 and 1 or 0
+end
+
+local function factionName(id)
+	return factionNames[id] and factionNames[id][lang()] or factionNames[0][lang()]
+end
+
+local function online(id)
+	local amount = 0
+	for _, player in ipairs(getElementsByType("player")) do
+		if getElementData(player, "loggedin") == 1 and tonumber(getElementData(player, "Fraktion")) == id then amount = amount + 1 end
+	end
+	return amount
+end
+
+local function pingColor(ping)
+	if ping <= 70 then return 0, 200, 0 end
+	if ping <= 120 then return 255, 250, 0 end
+	if ping <= 200 then return 255, 150, 0 end
+	return 200, 0, 0
+end
+
+local function playtime(minutes)
+	minutes = tonumber(minutes) or 0
+	return string.format("%02d:%02d", math.floor(minutes / 60), minutes % 60)
+end
+
+local function players()
+	local list = getElementsByType("player")
+	table.sort(list, function(a, b)
+		return getPlayerName(a):lower() < getPlayerName(b):lower()
+	end)
+	return list
+end
 
 function ScoreboardScrollingUp()
-	if(Scrollposition >= 2)then
-		Scrollposition = 0
-	else
-		Scrollposition = Scrollposition -2
-	end
+	scroll = math.max(0, scroll - 1)
 end
 
 function ScoreboardScrollingDown()
-	if(#getElementsByType('player') - Scrollposition <= 2)then
-		Scrollposition = #getElementsByType('player')
-	else
-		Scrollposition = Scrollposition +1
-	end
-end
-
-function getFactionMembersOnline(factionID)
-	local online = 0
-	for _,p in pairs(getElementsByType('player'))do
-		if(getElementData(p,'Fraktion') == factionID)then
-			online = online +1
-		end
-	end
-	return online
-end
-
-function formString(text)
-	if(string.len(text) == 1)then
-		text = '0'..text
-	end return text
-end
-
-function getPingColor(ping)
-	if(ping <= 70)then
-		return 0,200,0
-	elseif(ping >= 70 and ping <= 120)then
-		return 255,250,0
-	elseif(ping >= 120 and ping <= 200)then
-		return 255,150,0
-	elseif(ping >= 200)then
-		return 200,0,0
-	end
+	scroll = math.min(math.max(0, #getElementsByType("player") - visibleRows), scroll + 1)
 end
 
 function ScoreboardDraw()
-	dxDrawRectangle(x * 0.2643, y * 0.2952, x * 0.4649, y * 0.4419, tocolor(0, 0, 0, 139), false)
-	dxDrawRectangle(x * 0.2643, y * 0.5886, x * 0.4649, y * 0.0343, tocolor(125,125,0), false)
-	dxDrawRectangle(x * 0.2643, y * 0.3286, x * 0.4649, y * 0.0038, tocolor(125,125,0), false)
-	if(getElementData(localPlayer,'Language') == 0)then
-		dxDrawText('Spieler', x * 0.2851, y * 0.3076, x * 0.3107, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Fraktion', x * 0.3679, y * 0.3076, x * 0.3935, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Sozialer Status', x * 0.4435, y * 0.3076, x * 0.4952, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Handy-NR', x * 0.5405, y * 0.3076, x * 0.5750, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Spielzeit', x * 0.6244, y * 0.3076, x * 0.6589, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Ping', x * 0.6827, y * 0.3076, x * 0.7173, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'right', 'top', false, false, false, false, false)
-		dxDrawText(#getElementsByType('player')..' Spieler online', x * 0.2667, y * 0.5876, x * 0.3298, y * 0.6229, tocolor(255,255,255), 1.00, 'default-bold', 'center', 'center', false, false, false, false, false)
-	else
-		dxDrawText('Player', x * 0.2851, y * 0.3076, x * 0.3107, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Faction', x * 0.3679, y * 0.3076, x * 0.3935, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Status', x * 0.4435, y * 0.3076, x * 0.4952, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Phone number', x * 0.5405, y * 0.3076, x * 0.5750, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Playtime', x * 0.6244, y * 0.3076, x * 0.6589, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-		dxDrawText('Ping', x * 0.6827, y * 0.3076, x * 0.7173, y * 0.3229, tocolor(125,125,0), 1.00, 'default-bold', 'right', 'top', false, false, false, false, false)
-		dxDrawText(#getElementsByType('player')..' Player online', x * 0.2667, y * 0.5876, x * 0.3298, y * 0.6229, tocolor(255,255,255), 1.00, 'default-bold', 'center', 'center', false, false, false, false, false)
+	local list = players()
+	local maxScroll = math.max(0, #list - visibleRows)
+	if scroll > maxScroll then scroll = maxScroll end
+
+	local width, height = 940 * scale, 540 * scale
+	local x, y = (sx - width) / 2, (sy - height) / 2
+	local headerHeight = 48 * scale
+	local rowHeight = 24 * scale
+	local listY = y + headerHeight + 8 * scale
+	local footerY = y + height - 74 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 200), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawRectangle(x, y + 3 * scale, width, headerHeight - 3 * scale, tocolor(20, 20, 20, 255), false)
+
+	local cols = {
+		x + 25 * scale,
+		x + 210 * scale,
+		x + 365 * scale,
+		x + 530 * scale,
+		x + 680 * scale,
+		x + 815 * scale
+	}
+
+	local headers = {
+		getText("ScorePlayer"),
+		getText("ScoreFaction"),
+		getText("ScoreStatus"),
+		getText("ScorePhone"),
+		getText("ScorePlaytime"),
+		getText("ScorePing")
+	}
+
+	for i = 1, 6 do
+		local right = i < 6 and cols[i + 1] - 10 * scale or x + width - 20 * scale
+		dxDrawText(headers[i], cols[i], y + 5 * scale, right, y + headerHeight, tocolor(255, 255, 255, 255), 1, "default-bold", "left", "center", true, false, false)
 	end
-	dxDrawText('Staatsfraktionen:', x * 0.2726, y * 0.6324, x * 0.3298, y * 0.6476, tocolor(255,255,255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Police Department: '..getFactionMembersOnline(1), x * 0.2726, y * 0.6600, x * 0.3298, y * 0.6629, tocolor(0,200,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Böse Gangs:', x * 0.3702, y * 0.6324, x * 0.4274, y * 0.6476, tocolor(255,255,255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Yakuza: '..getFactionMembersOnline(2), x * 0.3702, y * 0.6600, x * 0.4274, y * 0.7086, tocolor(0,150,255, 139), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Biker: '..getFactionMembersOnline(3), x * 0.3702, y * 0.6800, x * 0.4274, y * 0.6781, tocolor(100,50,50, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Ballas: '..getFactionMembersOnline(5), x * 0.3702, y * 0.7000, x * 0.4274, y * 0.6781, tocolor(255,0,200, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Surenos: '..getFactionMembersOnline(6), x * 0.3702, y * 0.7200, x * 0.4274, y * 0.6781, tocolor(200,200,0, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Neutral:', x * 0.4452, y * 0.6324, x * 0.5024, y * 0.6476, tocolor(255,255,255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	dxDrawText('Reporter: '..getFactionMembersOnline(4), x * 0.4452, y * 0.6600, x * 0.5024, y * 0.6629, tocolor(255,150,0), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-	local id=0
-	local Player={}
-	for _,p in pairs(getElementsByType('player'))do 
-		local name = getPlayerName(p)
-		local fac = 0
-		local nr = '-'
-		local ptime = '-'
-		local status = '_'
-		local r,g,b = 255,255,255
-		local ping = getPlayerPing(p)
-		
-		if(getElementData(p,'loggedin') == 1)then
-			nr=getElementData(p,'Telefonnummer')
-			if(nr == 0)then
-				nr = 'Kein Handy'
-			end
-			fac = getElementData(p,'Fraktion')
-			stn = getElementData(p,'Status')
-			if(not(fraknames[fac]))then
-				fac = 0
-			end
-			 r,g,b = fcolors[fac][1],fcolors[fac][2],fcolors[fac][3]
-			 hour = math.floor(tonumber(getElementData(p,'Spielzeit'))/60)
-			 minute = tonumber(getElementData(p,'Spielzeit'))-hour*60
-			 ptime = formString(hour)..':'..formString(minute)
-		end
-		
-		if(getElementData(p,'Adminrang'))then
-			if(getElementData(p,'Adminrang') ~= 0)then
-			name = '[BC]'..name end
-		end
-		
-		Player[id] = {}
-		Player[id].Name = name
-		Player[id].Fraktion = fac
-		Player[id].Spielzeit = ptime;
-		Player[id].Nummer = nr
-		Player[id].Status = stn
-		Player[id].R = r
-		Player[id].G = g
-		Player[id].B = b
-		Player[id].Ping = ping
-		id = id +1
-	end
-	local scale = 0
-	for i = 0+Scrollposition, 15+Scrollposition do	
-		if Player[i] then
-			dxDrawText(Player[i].Name, x * 0.2851, y * (0.3419+(scale*0.171)), x * 0.3679, y * 0.3590, tocolor(Player[i].R,Player[i].G,Player[i].B, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-			dxDrawText(fraknames[Player[i].Fraktion], x * 0.3667, y * (0.3419+(scale*0.171)), x * 0.4387, y * 0.3590, tocolor(Player[i].R,Player[i].G,Player[i].B, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-			dxDrawText(Player[i].Status, x * 0.4435, y * (0.3419+(scale*0.171)), x * 0.5262, y * 0.3590, tocolor(Player[i].R,Player[i].G,Player[i].B, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-			dxDrawText(Player[i].Nummer, x * 0.5405, y * (0.3419+(scale*0.171)), x * 0.6185, y * 0.3590, tocolor(Player[i].R,Player[i].G,Player[i].B,255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-			dxDrawText(Player[i].Spielzeit, x * 0.6244, y * (0.3419+(scale*0.171)), x * 0.6827, y * 0.3590, tocolor(Player[i].R,Player[i].G,Player[i].B, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-			local pr, pg, pb = getPingColor(Player[i].Ping)
-			dxDrawText(Player[i].Ping, x * 0.7030, y * (0.3419+(scale*0.171)), x * 0.7173, y * 0.3590, tocolor(pr, pg, pb, 255), 1.00, 'default-bold', 'left', 'top', false, false, false, false, false)
-			scale = scale + 0.1
+
+	for row = 1, visibleRows do
+		local player = list[scroll + row]
+		if not player then break end
+		local rowY = listY + (row - 1) * rowHeight
+		local logged = getElementData(player, "loggedin") == 1
+		local faction = logged and (tonumber(getElementData(player, "Fraktion")) or 0) or -1
+		local factionColor = factionColors[faction] or factionColors[0]
+		local name = getPlayerName(player)
+		if (tonumber(getElementData(player, "Adminrang")) or 0) > 0 then name = "[BC] " .. name end
+		local phone = logged and (getElementData(player, "Telefonnummer") or "-") or "-"
+		if phone == 0 then phone = getText("ScoreNoPhone") end
+		local status = logged and tostring(getElementData(player, "Status") or "-") or "-"
+		local playerTime = logged and playtime(getElementData(player, "Spielzeit")) or "-"
+		local ping = getPlayerPing(player)
+		local pr, pg, pb = pingColor(ping)
+		local values = {name, logged and factionName(faction) or "-", status, tostring(phone), playerTime, tostring(ping)}
+
+		if row % 2 == 0 then dxDrawRectangle(x + 10 * scale, rowY, width - 20 * scale, rowHeight, tocolor(20, 20, 20, 210), false) end
+		for i = 1, 6 do
+			local right = i < 6 and cols[i + 1] - 10 * scale or x + width - 20 * scale
+			local color = i == 6 and tocolor(pr, pg, pb, 255) or tocolor(factionColor[1], factionColor[2], factionColor[3], 255)
+			dxDrawText(values[i], cols[i], rowY, right, rowY + rowHeight, color, 1, "default-bold", "left", "center", true, false, false)
 		end
 	end
+
+	if #list > visibleRows then
+		local barX = x + width - 7 * scale
+		local barY = listY
+		local barHeight = visibleRows * rowHeight
+		local thumbHeight = barHeight * (visibleRows / #list)
+		local thumbY = barY
+		if maxScroll > 0 then thumbY = barY + (barHeight - thumbHeight) * (scroll / maxScroll) end
+		dxDrawRectangle(barX, barY, 3 * scale, barHeight, tocolor(50, 50, 50, 255), false)
+		dxDrawRectangle(barX, thumbY, 3 * scale, thumbHeight, tocolor(0, 100, 200, 255), false)
+	end
+
+	dxDrawRectangle(x, footerY, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(getText("ScoreOnline"):format(#list), x + 20 * scale, footerY + 8 * scale, x + 185 * scale, y + height - 10 * scale, tocolor(255, 255, 255, 255), 1, "default-bold", "left", "center")
+	dxDrawText(getText("ScoreState") .. "\nPolice Department: " .. online(1), x + 200 * scale, footerY + 7 * scale, x + 400 * scale, y + height - 5 * scale, tocolor(255, 255, 255, 255), 1, "default-bold", "left", "top")
+	dxDrawText(getText("ScoreGangs") .. "\nYakuza: " .. online(2) .. " | Biker: " .. online(3) .. " | Ballas: " .. online(5) .. " | Surenos: " .. online(6), x + 410 * scale, footerY + 7 * scale, x + 745 * scale, y + height - 5 * scale, tocolor(255, 255, 255, 255), 1, "default-bold", "left", "top", false, true)
+	dxDrawText(getText("ScoreNeutral") .. "\nReporter: " .. online(4), x + 755 * scale, footerY + 7 * scale, x + width - 20 * scale, y + height - 5 * scale, tocolor(255, 255, 255, 255), 1, "default-bold", "left", "top")
 end
 
-bindKey('tab','down',function()
-	if(getElementData(localPlayer,'loggedin') == 1)then
-		if(getElementData(localPlayer,'redfieldClick') == false)then
-			toggleControl('fire',false)
-			toggleControl('next_weapon',false)
-			toggleControl('previous_weapon',false)
-			bindKey('mouse_wheel_up','down',ScoreboardScrollingUp)
-			bindKey('mouse_wheel_up','down',ScoreboardScrollingDown)
-			addEventHandler('onClientRender',root,ScoreboardDraw)
-		end
-	end
-end)
+local function showScoreboard()
+	if scoreboardVisible or getElementData(localPlayer, "loggedin") ~= 1 or getElementData(localPlayer, "redfieldClick") ~= false then return end
+	scoreboardVisible = true
+	scroll = 0
+	toggleControl("fire", false)
+	toggleControl("next_weapon", false)
+	toggleControl("previous_weapon", false)
+	bindKey("mouse_wheel_up", "down", ScoreboardScrollingUp)
+	bindKey("mouse_wheel_down", "down", ScoreboardScrollingDown)
+	addEventHandler("onClientRender", root, ScoreboardDraw)
+end
 
-bindKey('tab','up',function()
-	toggleControl('fire',true)
-	toggleControl('next_weapon',true)
-	toggleControl('previous_weapon',true)
-	unbindKey('mouse_wheel_up','down',ScoreboardScrollingUp)
-	unbindKey('mouse_wheel_up','down',ScoreboardScrollingDown)
-	removeEventHandler('onClientRender',root,ScoreboardDraw)
-end)
+local function hideScoreboard()
+	if not scoreboardVisible then return end
+	scoreboardVisible = false
+	toggleControl("fire", true)
+	toggleControl("next_weapon", true)
+	toggleControl("previous_weapon", true)
+	unbindKey("mouse_wheel_up", "down", ScoreboardScrollingUp)
+	unbindKey("mouse_wheel_down", "down", ScoreboardScrollingDown)
+	removeEventHandler("onClientRender", root, ScoreboardDraw)
+end
+
+bindKey("tab", "down", showScoreboard)
+bindKey("tab", "up", hideScoreboard)

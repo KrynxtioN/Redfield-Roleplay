@@ -1,28 +1,26 @@
-function bonusshopserverbuy(item,level)
-	if(item == 'leben')then
-		if(getElementData(source,"Level")>=level)then
-			if(isErfahrungspunkte(source,25))then
-				setElementHealth(source,100)
-				takeErfahrungspunkte(source,25)
-			else
-				getChatBox(source,26)
-			end
-		else
-			getChatBox(source,169)
-		end
-	elseif(item == 'weste')then
-		if(getElementData(source,"Level")>=level)then
-			if(isErfahrungspunkte(source,25))then
-				setPedArmor(source,100)
-				takeErfahrungspunkte(source,25)
-			else
-				getChatBox(source,26)
-			end
-		else
-			getChatBox(source,169)
-		end
+local BONUSSHOP_PRICE = 25
+
+function bonusshopserverbuy(item)
+	local player = client
+	if not player or not isElement(player) then return end
+	if getElementData(player,"loggedin") ~= 1 then return end
+
+	if item ~= "leben" and item ~= "weste" then return end
+
+	if not isErfahrungspunkte(player,BONUSSHOP_PRICE) then
+		infobox_func(player,getText(player,"Bonusshop8"):format(BONUSSHOP_PRICE),255,0,0)
+		return
 	end
-	getChatBox(source,25)
+
+	if item == "leben" then
+		setElementHealth(player,100)
+	elseif item == "weste" then
+		setPedArmor(player,100)
+	end
+
+	takeErfahrungspunkte(player,BONUSSHOP_PRICE)
+
+	infobox_func(player,getText(player,"Bonusshop9"):format(BONUSSHOP_PRICE),0,255,0)
 end
-addEvent('bonusshopserverbuy',true)
-addEventHandler('bonusshopserverbuy',root,bonusshopserverbuy)
+addEvent("bonusshopserverbuy",true)
+addEventHandler("bonusshopserverbuy",root,bonusshopserverbuy)

@@ -1,7 +1,3 @@
-//
-// blackwhite.fx
-//
-
 texture screenSource;
  
 sampler TextureSampler = sampler_state

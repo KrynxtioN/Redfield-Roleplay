@@ -1,105 +1,98 @@
-local goPizzaLadenMarker={
-
-[1] = createPickup(-1808.3822021484,945.3701171875,23.848808288574,3,1318,50),
-[2] = createPickup(-1721.3131103516,1359.7663574219,6.6736726760864,3,1318,50),
-[3] = createPickup(2105.474,-1806.535,13.555,3,1318,50),
-[4] = createPickup(2756.748,2477.368,11.062,3,1318,50),
-[5] = createPickup(2330.648,2533.395,10.82,3,1318,50),
-[6] = createPickup(2083.309,2224.7,11.023,3,1318,50),
-[7] = createPickup(2331.825,75.036,26.621,3,1318,50),
-[8] = createPickup(1367.407,248.438,19.567,3,1318,50),
-[9] = createPickup(212.427,-202.231,1.578,3,1318,50),
-
+PizzaShop = {Marker_Enter = {}, Marker_Leave = {}, Marker_Buy = {}, Ped = {},
+	["Marker"] = {
+		{-1808.3822021484,945.3701171875,23.848808288574},
+		{-1721.3131103516,1359.7663574219,6.6736726760864},
+		{2105.474,-1806.535,13.555},
+		{2756.748,2477.368,11.062},
+		{2330.648,2533.395,10.82},
+		{2083.309,2224.7,11.023},
+		{2331.825,75.036,26.621},
+		{1367.407,248.438,19.567},
+		{212.427,-202.231,1.578},
+	},
 }
 
-for i,pizzamarker in pairs(goPizzaLadenMarker)do
-	addEventHandler('onPickupHit',pizzamarker,function(player)
+for i,v in ipairs(PizzaShop["Marker"])do
+	PizzaShop.Marker_Enter[i] = createPickup(v[1],v[2],v[3],3,1318,50)
+	setElementData(PizzaShop.Marker_Enter[i],"ID",i)
+	PizzaShop.Ped[i] = createPed(155,374.70001220703,-117.09999847412,1001.5)
+	setElementRotation(PizzaShop.Ped[i],0,0,180)
+	setElementInterior(PizzaShop.Ped[i],5)
+	setElementDimension(PizzaShop.Ped[i],i)
+	
+	PizzaShop.Marker_Leave[i] = createPickup(372.29998779297,-133.39999389648,1000.5999755859,3,1318,50)
+	setElementInterior(PizzaShop.Marker_Leave[i],5)
+	setElementDimension(PizzaShop.Marker_Leave[i],i)
+	
+	PizzaShop.Marker_Buy[i] = createMarker(374.70001220703,-119,1000.5999755859,"cylinder",1,255,255,255,100)
+	setElementInterior(PizzaShop.Marker_Buy[i],5)
+	setElementDimension(PizzaShop.Marker_Buy[i],i)
+	
+	addEventHandler("onPickupHit",PizzaShop.Marker_Enter[i],function(player)
 		if(not(isPedInVehicle(player)))then
-			triggerClientEvent(player,"ladeBalken",player)
-		
-			local x,y,z = getElementPosition(player)
-			setElementData(player,'saveposx',x)
-			setElementData(player,'saveposy',y)
-			setElementData(player,'saveposz',z)
-			
-			setTimer(function()
-				setElementPosition(player,372.29998779297,-131.80000305176,1001.5)
-				setPedRotation(player,0)
-				setElementInterior(player,5)
-				setElementDimension(player,i)
+			if(getElementDimension(player) == getElementDimension(source))then
+				triggerClientEvent(player,"ladeBalken",player)
 				
-				pizzaGuy = createPed(155,374.70001220703,-117.09999847412,1001.5,180)
-				setElementInterior(pizzaGuy,5)
-				setElementDimension(pizzaGuy,i)
+				local x,y,z = getElementPosition(player)
+				setElementData(player,'saveposx',x)
+				setElementData(player,'saveposy',y)
+				setElementData(player,'saveposz',z)
 				
-				pizzamarkerLeave = createMarker(372.29998779297,-133.39999389648,1000.5999755859,'cylinder',1,0,0,200)
-				setElementInterior(pizzamarkerLeave,5)
-				setElementDimension(pizzamarkerLeave,i)
-				pizzamarkerKaufen = createMarker(374.70001220703,-119,1000.5999755859,'cylinder',1,0,0,200)
-				setElementInterior(pizzamarkerKaufen,5)
-				setElementDimension(pizzamarkerKaufen,i)
-					
-				addEventHandler('onMarkerHit',pizzamarkerLeave,pizzariaLeave)
-				addEventHandler('onMarkerHit',pizzamarkerKaufen,pizzariaKaufen)
-			end,1500,1)
+				setTimer(function(player,marker)
+					if(isElement(player))then
+						setElementPosition(player,372.29998779297,-131.80000305176,1001.5)
+						setElementRotation(player,0,0,0)
+						setElementInterior(player,5)
+						setElementDimension(player,i)
+						setElementDimension(player,getElementData(marker,"ID"))
+					end
+				end,1500,1,player,source)
+			end
+		end
+	end)
+	
+	addEventHandler("onPickupHit",PizzaShop.Marker_Leave[i],function(player)
+		if(not(isPedInVehicle(player)))then
+			if(getElementDimension(player) == getElementDimension(source))then
+				triggerClientEvent(player,"ladeBalken",player)
+				setTimer(function(player)
+					if(isElement(player))then
+						setElementPosition(player,getElementData(player,'saveposx'),getElementData(player,'saveposy'),getElementData(player,'saveposz'))
+						setElementDimension(player,0)
+						setElementInterior(player,0)
+						setElementData(player,'saveposx',nil)
+						setElementData(player,'saveposy',nil)
+						setElementData(player,'saveposz',nil)
+					end
+				end,1500,1,player)
+			end
+		end
+	end)
+	
+	addEventHandler("onMarkerHit",PizzaShop.Marker_Buy[i],function(player)
+		if(not(isPedInVehicle(player)))then
+			if(getElementDimension(player) == getElementDimension(source))then
+				triggerClientEvent(player,"openPizzaWindow",player)
+			end
 		end
 	end)
 end
 
-function pizzariaLeave(player)
-	triggerClientEvent(player,"ladeBalken",player)
-	setTimer(function()
-		setElementPosition(player,getElementData(player,'saveposx'),getElementData(player,'saveposy'),getElementData(player,'saveposz'))
-		setElementDimension(player,0)
-		setElementInterior(player,0)
-		setElementData(player,'saveposx',nil)
-		setElementData(player,'saveposy',nil)
-		setElementData(player,'saveposz',nil)
-	end,1500,1)
-end
-
-function pizzariaKaufen(player)
-	triggerClientEvent(player,'openPizzaWindow',player)
-end
-
 function buyPizza(pizza)
-	if(pizza == 'klein')then
-		if(getPlayerMoney(source)>=10)then
-			takePlayerMoney(source,10)
-			getChatBox(source,78)
-			updateEventkasse("einzahlen",10)
-			setElementData(source,'Hunger',getElementData(source,'Hunger') + 25)
-			if(getElementData(source,'Hunger') > 100)then
-				setElementData(source,'Hunger',100)
-			end
-		else
-			getChatBox(source,33)
+	local preis = 0
+	if(pizza == "klein")then preis = 10 end
+	if(pizza == "mittel")then preis = 25 end
+	if(pizza == "groß")then preis = 50 end
+	
+	if(tonumber(getElementData(client,"Money")) >= tonumber(preis))then
+		setElementData(client,"Money",tonumber(getElementData(client,"Money")) - preis)
+		infobox_func(client,getText(client,"PizzaShop7"),0,255,0)
+		updateEventkasse("einzahlen",preis)
+		setElementData(client,"Hunger",getElementData(client,"Hunger")+preis)
+		if(getElementData(client,"Hunger") > 100)then
+			setElementData(client,"Hunger",100)
 		end
-	elseif(pizza == 'mittel')then
-		if(getPlayerMoney(source)>=25)then
-			takePlayerMoney(source,25)
-			getChatBox(source,78)
-			updateEventkasse("einzahlen",25)
-			setElementData(source,'Hunger',getElementData(source,'Hunger') + 50)
-			if(getElementData(source,'Hunger') > 100)then
-				setElementData(source,'Hunger',100)
-			end
-		else
-			getChatBox(source,33)
-		end
-	elseif(pizza == 'groß')then
-		if(getPlayerMoney(source)>=50)then
-			takePlayerMoney(source,50)
-			getChatBox(source,78)
-			updateEventkasse("einzahlen",50)
-			setElementData(source,'Hunger',getElementData(source,'Hunger') + 100)
-			if(getElementData(source,'Hunger') > 100)then
-				setElementData(source,'Hunger',100)
-			end
-		else
-			getChatBox(source,33)
-		end
-	end
+	else infobox_func(client,getText(client,"PizzaShop6"),255,0,0)end
 end
 addEvent('buyPizza',true)
 addEventHandler('buyPizza',root,buyPizza)

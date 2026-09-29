@@ -1,47 +1,104 @@
-local housemenue = {button = {},window = {},label = {}}
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
+local houseMenuVisible = false
 
-function houseWindow()
-	if(not(isElement(housemenue.window[1])))then
-		if(not(getElementData(localPlayer,"redfieldClick"))==true)then
-			if(getElementData(localPlayer,"isPlayerInHouse")==true)then
-				showCursor(true)
-				setElementData(localPlayer,"redfieldClick",true)
-		
-				housemenue.window[1] = guiCreateStaticImage(0.39, 0.42, 0.25, 0.19, "Images/Background.png", true)
+local function isCursorOnElement(x, y, width, height)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + width and cy >= y and cy <= y + height
+end
 
-				housemenue.label[1] = guiCreateLabel(0.03, 0.15, 0.94, 0.36, "Dies ist das Hausmenü, hier kannst du dich jederzeit kostenlos heilen und Essen.", true, housemenue.window[1])
-				guiSetFont(housemenue.label[1], "default-bold-small")
-				guiLabelSetHorizontalAlign(housemenue.label[1], "center", true)
-				guiLabelSetVerticalAlign(housemenue.label[1], "center")
-				housemenue.button[1] = guiCreateButton(0.03, 0.57, 0.46, 0.17, "Heilen", true, housemenue.window[1])
-				guiSetProperty(housemenue.button[1], "NormalTextColour", "FFAAAAAA")
-				housemenue.button[2] = guiCreateButton(0.51, 0.57, 0.46, 0.17, "Essen", true, housemenue.window[1])
-				guiSetProperty(housemenue.button[2], "NormalTextColour", "FFAAAAAA")
-				housemenue.button[3] = guiCreateButton(0.03, 0.78, 0.94, 0.16, "Schließen", true, housemenue.window[1])
-				guiSetProperty(housemenue.button[3], "NormalTextColour", "FFAAAAAA")
-				
-				if(getElementData(localPlayer,"Language")==1)then
-					guiSetText(housemenue.label[1],"This is the Housemenu. Here you can fill your hunger and Health.")
-					guiSetText(housemenue.button[1],"100% Health")
-					guisetText(housemenue.button[2],"100% Hunger")
-					guiSetText(housemenue.button[3],"Close")
-				end
-				
-				addEventHandler("onClientGUIClick",housemenue.button[1],function()
-					triggerServerEvent("house_heilen",localPlayer,localPlayer)
-				end)
-				
-				addEventHandler("onClientGUIClick",housemenue.button[2],function()
-					triggerServerEvent("house_eat",localPlayer,localPlayer)
-				end)
-				
-				addEventHandler("onClientGUIClick",housemenue.button[3],function()
-					showCursor(false)
-					setElementData(localPlayer,"redfieldClick",false)
-					destroyElement(housemenue.window[1])
-				end)
-			end
-		end
+local function getHouseLayout()
+	local width = 480 * scale
+	local height = 250 * scale
+	local x = (sx - width) / 2
+	local y = (sy - height) / 2
+	local padding = 15 * scale
+	return x, y, width, height, padding
+end
+
+local function drawButton(text, x, y, width, height)
+	local hover = isCursorOnElement(x, y, width, height)
+	dxDrawRectangle(x, y, width, height, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + height - 2 * scale, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + width - 8 * scale, y + height, tocolor(255, 255, 255, 255), 1, "default-bold", "center", "center", true, false, false)
+end
+
+local function drawHouseWindow()
+	if not houseMenuVisible then return end
+
+	local x, y, width, height, padding = getHouseLayout()
+	local contentWidth = width - padding * 2
+	local buttonGap = 10 * scale
+	local buttonHeight = 42 * scale
+	local buttonWidth = (contentWidth - buttonGap) / 2
+	local buttonY = y + 137 * scale
+	local closeY = buttonY + buttonHeight + 10 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 235), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+
+	dxDrawRectangle(x + padding, y + 18 * scale, contentWidth, 100 * scale, tocolor(20, 20, 20, 255), false)
+	dxDrawRectangle(x + padding, y + 18 * scale, 3 * scale, 100 * scale, tocolor(0, 100, 200, 255), false)
+
+	dxDrawText(getText("House2"), x + padding + 15 * scale, y + 28 * scale, x + width - padding - 15 * scale, y + 108 * scale, tocolor(255, 255, 255, 255), 1, "default-bold", "center", "center", true, true, false)
+
+	drawButton(getText("House3"), x + padding, buttonY, buttonWidth, buttonHeight)
+	drawButton(getText("House4"), x + padding + buttonWidth + buttonGap, buttonY, buttonWidth, buttonHeight)
+	drawButton(getText("House5"), x + padding, closeY, contentWidth, buttonHeight)
+end
+
+local function closeHouseWindow()
+	if not houseMenuVisible then return end
+	houseMenuVisible = false
+	removeEventHandler("onClientRender", root, drawHouseWindow)
+	removeEventHandler("onClientClick", root, houseMenuClick)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+end
+
+function houseMenuClick(button, state)
+	if not houseMenuVisible or button ~= "left" or state ~= "down" then return end
+
+	local x, y, width, height, padding = getHouseLayout()
+	local contentWidth = width - padding * 2
+	local buttonGap = 10 * scale
+	local buttonHeight = 42 * scale
+	local buttonWidth = (contentWidth - buttonGap) / 2
+	local buttonY = y + 137 * scale
+	local closeY = buttonY + buttonHeight + 10 * scale
+
+	if isCursorOnElement(x + padding, buttonY, buttonWidth, buttonHeight) then
+		triggerServerEvent("house_heilen", localPlayer)
+		return
+	end
+
+	if isCursorOnElement(x + padding + buttonWidth + buttonGap, buttonY, buttonWidth, buttonHeight) then
+		triggerServerEvent("house_eat", localPlayer)
+		return
+	end
+
+	if isCursorOnElement(x + padding, closeY, contentWidth, buttonHeight) then
+		closeHouseWindow()
 	end
 end
-bindKey("f2","down",houseWindow)
+
+function houseWindow()
+	if houseMenuVisible then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+
+	if getElementData(localPlayer, "isPlayerInHouse") ~= true then
+		infobox(getText("House1"), 255, 0, 0)
+		return
+	end
+
+	houseMenuVisible = true
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	addEventHandler("onClientRender", root, drawHouseWindow)
+	addEventHandler("onClientClick", root, houseMenuClick)
+end
+
+bindKey("f2", "down", houseWindow)

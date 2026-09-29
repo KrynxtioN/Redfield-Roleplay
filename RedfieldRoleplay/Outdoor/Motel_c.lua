@@ -1,44 +1,116 @@
-local motel = {button = {},window = {}, label = {}}
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
 
-function motelWindow()
-	if(getElementData(localPlayer,'redfieldClick') == false)then
-		if(not(isElement(motel.window[1])))then
-			showCursor(true)
-			setElementData(localPlayer,'redfieldClick',true)
-			
-			motel.window[1] = guiCreateStaticImage(0.40, 0.39, 0.21, 0.19, 'Images/Background.png', true)
+local motelVisible = false
 
-			motel.button[1] = guiCreateButton(0.03, 0.17, 0.44, 0.17, 'Zimmer mieten', true, motel.window[1])
-			guiSetProperty(motel.button[1], 'NormalTextColour', 'FFAAAAAA')
-			motel.button[2] = guiCreateButton(0.03, 0.39, 0.44, 0.17, 'Ausmieten', true, motel.window[1])
-			guiSetProperty(motel.button[2], 'NormalTextColour', 'FFAAAAAA')
-			motel.button[3] = guiCreateButton(0.03, 0.77, 0.44, 0.17, 'Schließen', true, motel.window[1])
-			guiSetProperty(motel.button[3], 'NormalTextColour', 'FFAAAAAA')
-			
-			motel.label[1] = guiCreateLabel(0.51, 0.17, 0.46, 0.77, 'Willkommen im Redfield Roleplay Motel. Für 630$ pro Payday kannst du dir hier ein Zimmer mieten.', true, motel.window[1])
-			guiSetFont(motel.label[1], 'default-bold-small')
-			guiLabelSetHorizontalAlign(motel.label[1], 'left', true)
-			
-			if(getElementData(localPlayer,'Language') == 1)then
-				guiSetText(motel.button[1],'Rent a room')
-				guiSetText(motel.button[2],'Move out')
-				guiSetText(motel.button[3],'Close')
-				guiSetText(motel.label[1],'Welcome to the Redfield Roleplay Motel. For $ 630 per Payday can you rent a room here.')
-			end
+local function isCursorOnElement(x, y, width, height)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + width and cy >= y and cy <= y + height
+end
 
-			addEventHandler('onClientGUIClick',motel.button[1],function()
-				triggerServerEvent('zimmerMieten',localPlayer,localPlayer)
-			end,false)
-			addEventHandler('onClientGUIClick',motel.button[2],function()
-				triggerServerEvent('ausmietenMotel',localPlayer,localPlayer)
-			end,false)
-			addEventHandler('onClientGUIClick',motel.button[3],function()
-				destroyElement(motel.window[1])
-				showCursor(false)
-				setElementData(localPlayer,'redfieldClick',false)
-			end,false)
-		end
+local function getMotelLayout()
+	local width, height = 500 * scale, 310 * scale
+	local x, y = (sx - width) / 2, (sy - height) / 2
+	local padding = 15 * scale
+	return x, y, width, height, padding
+end
+
+local function drawButton(text, x, y, width, height)
+	local hover = isCursorOnElement(x, y, width, height)
+	dxDrawRectangle(x, y, width, height, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + height - 2 * scale, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + width - 8 * scale, y + height, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+end
+
+local function drawMotelWindow()
+	if not motelVisible then return end
+
+	local x, y, width, height, padding = getMotelLayout()
+	local contentWidth = width - padding * 2
+	local leftWidth = 210 * scale
+	local gap = 12 * scale
+	local rightWidth = contentWidth - leftWidth - gap
+	local buttonHeight = 44 * scale
+	local buttonGap = 10 * scale
+	local contentY = y + 20 * scale
+	local infoHeight = 205 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+
+	dxDrawRectangle(x + padding + leftWidth + gap, contentY, rightWidth, infoHeight, tocolor(20, 20, 20, 255), false)
+	dxDrawRectangle(x + padding + leftWidth + gap, contentY, 3 * scale, infoHeight, tocolor(0, 100, 200, 255), false)
+	dxDrawText(getText("Motel8"), x + padding + leftWidth + gap + 15 * scale, contentY + 12 * scale, x + width - padding - 12 * scale, contentY + infoHeight - 12 * scale, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "left", "top", false, true)
+
+	drawButton(getText("Motel5"), x + padding, contentY, leftWidth, buttonHeight)
+	drawButton(getText("Motel6"), x + padding, contentY + buttonHeight + buttonGap, leftWidth, buttonHeight)
+	drawButton(getText("Motel7"), x + padding, contentY + infoHeight - buttonHeight, leftWidth, buttonHeight)
+end
+
+function closeMotelWindow(sendServer)
+	if not motelVisible then return end
+
+	motelVisible = false
+	removeEventHandler("onClientRender", root, drawMotelWindow)
+	removeEventHandler("onClientClick", root, motelWindowClick)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+
+	if sendServer then
+		triggerServerEvent("closeMotelSession", localPlayer)
 	end
 end
-addEvent('motelWindow',true)
-addEventHandler('motelWindow',root,motelWindow)
+
+function motelWindowClick(button, state)
+	if not motelVisible or button ~= "left" or state ~= "down" then return end
+
+	local x, y, width, height, padding = getMotelLayout()
+	local contentWidth = width - padding * 2
+	local leftWidth = 210 * scale
+	local buttonHeight = 44 * scale
+	local buttonGap = 10 * scale
+	local contentY = y + 20 * scale
+	local infoHeight = 205 * scale
+
+	if isCursorOnElement(x + padding, contentY, leftWidth, buttonHeight) then
+		triggerServerEvent("zimmerMieten", localPlayer)
+		return
+	end
+
+	if isCursorOnElement(x + padding, contentY + buttonHeight + buttonGap, leftWidth, buttonHeight) then
+		triggerServerEvent("ausmietenMotel", localPlayer)
+		return
+	end
+
+	if isCursorOnElement(x + padding, contentY + infoHeight - buttonHeight, leftWidth, buttonHeight) then
+		closeMotelWindow(true)
+	end
+end
+
+function motelWindow()
+	if motelVisible then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+
+	motelVisible = true
+
+	triggerServerEvent("openMotelSession", localPlayer)
+
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	addEventHandler("onClientRender", root, drawMotelWindow)
+	addEventHandler("onClientClick", root, motelWindowClick)
+end
+addEvent("motelWindow", true)
+addEventHandler("motelWindow", root, motelWindow)
+
+addEvent("closeMotelWindow", true)
+addEventHandler("closeMotelWindow", root, function()
+	closeMotelWindow(false)
+end)
+
+addEventHandler("onClientPlayerWasted", localPlayer, function()
+	closeMotelWindow(false)
+end)

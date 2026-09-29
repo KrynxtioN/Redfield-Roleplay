@@ -1,49 +1,158 @@
-function StartTankwart(player)
-	if(getElementData(player,'Job') == 'Tankwart')then
-		if(getDistanceBetweenPoints3D(639.02117919922,1683.3165283203,7.1875,getElementPosition(player)) < 5)then
-			local pname=getPlayerName(player)
-			setElementData(player,'TankwartAktiv',true)
-			_G["vehicle"..pname] = createVehicle(403,643.5,1692.5,7.6999998092651,0,0,40)
-			_G["anhaenger"..pname] = createVehicle(584,649.7998046875,1685.2001953125,8.1999998092651,0,0,40)
-			attachTrailerToVehicle(_G["vehicle"..pname],_G["anhaenger"..pname])
-			setElementData(_G["vehicle"..pname],'Benzin',100)
-			setElementData(_G["anhaenger"..pname],'Benzin',100)
-			setElementData(_G["vehicle"..pname],'Besitzer','System')
-			setElementData(_G["anhaenger"..pname],'Besitzer','System')
-			warpPedIntoVehicle(player,_G["vehicle"..pname])
-			addEventHandler('onVehicleStartExit',_G["vehicle"..pname],function()
-				cancelEvent()
-				getChatBox(player,129)
-			end)
-			_G["checkTrailer"..pname]=setTimer(function()
-				if(getVehicleOccupant(_G["vehicle"..pname])==false)then
-					destroyElement(_G["vehicle"..pname])
-					destroyElement(_G["anhaenger"..pname])
-					killTimer(_G["checkTrailer"..pname])
-				end
-			end,30000,0)
-			triggerClientEvent(player,'createTankMarker',player)
-		end
-	end
-end
-addCommandHandler('tankjob',StartTankwart)
+local tankwartVehicles = {}
+local tankwartTrailers = {}
+local tankwartTimers = {}
 
-function AnhaengerCheckTankWart(player)
-	local veh = getPedOccupiedVehicle(player)
-	local anhaenger = getVehicleTowedByVehicle(veh)
-	if(anhaenger)then
-		if(getElementData(player,'Tankwartjobskills') < 100)then
-			giveJobMoney(200,1)
-		elseif(getElementData(player,'Tankwartjobskills') > 99 and getElementData(player,'Tankwartjobskills') < 200)then
-			giveJobMoney(400,1)
-		else
-			giveJobMoney(600,0)
-		end
-		triggerClientEvent(player,'destroyTankShit',player)
-		triggerClientEvent(player,'createTankMarker',player)
-	else 
-		getChatBox(player,128)
+local function destroyTankwartJob(player)
+	if isTimer(tankwartTimers[player]) then
+		killTimer(tankwartTimers[player])
+	end
+
+	tankwartTimers[player] = nil
+
+	if isElement(tankwartVehicles[player]) then
+		destroyElement(tankwartVehicles[player])
+	end
+
+	if isElement(tankwartTrailers[player]) then
+		destroyElement(tankwartTrailers[player])
+	end
+
+	tankwartVehicles[player] = nil
+	tankwartTrailers[player] = nil
+
+	if isElement(player) then
+		setElementData(player,"TankwartAktiv",false)
+		triggerClientEvent(player,"destroyTankShit",player)
 	end
 end
-addEvent('AnhaengerCheckTankWart',true)
-addEventHandler('AnhaengerCheckTankWart',root,AnhaengerCheckTankWart)
+
+function StartTankwart(player)
+	if not isElement(player) or getElementType(player) ~= "player" then return end
+	if getElementData(player,"loggedin") ~= 1 then return end
+
+	if getElementData(player,"Job") ~= "Tankwart" then
+		return
+	end
+
+	local px,py,pz = getElementPosition(player)
+
+	if getDistanceBetweenPoints3D(639.02117919922,1683.3165283203,7.1875,px,py,pz) >= 5 then
+		return
+	end
+
+	if getElementData(player,"TankwartAktiv") == true then
+		infobox_func(player,getText(player,"Tankwart2"),255,0,0)
+		return
+	end
+
+	local vehicle = createVehicle(403,643.5,1692.5,7.6999998092651,0,0,40)
+	local trailer = createVehicle(584,649.7998046875,1685.2001953125,8.1999998092651,0,0,40)
+
+	if not isElement(vehicle) or not isElement(trailer) then
+		if isElement(vehicle) then
+			destroyElement(vehicle)
+		end
+
+		if isElement(trailer) then
+			destroyElement(trailer)
+		end
+
+		return
+	end
+
+	tankwartVehicles[player] = vehicle
+	tankwartTrailers[player] = trailer
+
+	setElementData(player,"TankwartAktiv",true)
+
+	setElementData(vehicle,"Benzin",100)
+	setElementData(vehicle,"Besitzer","System")
+
+	setElementData(trailer,"Benzin",100)
+	setElementData(trailer,"Besitzer","System")
+
+	attachTrailerToVehicle(vehicle,trailer)
+	warpPedIntoVehicle(player,vehicle)
+
+	addEventHandler("onVehicleStartExit",vehicle,function(exitingPlayer,seat)
+		if exitingPlayer == player and seat == 0 then
+			cancelEvent()
+			getChatBox(player,129)
+			infobox_func(player,getText(player,"Tankwart6"),0,255,0)
+		end
+	end)
+
+	tankwartTimers[player] = setTimer(function(jobPlayer)
+		if not isElement(jobPlayer) then return end
+
+		local jobVehicle = tankwartVehicles[jobPlayer]
+
+		if not isElement(jobVehicle) then
+			destroyTankwartJob(jobPlayer)
+			return
+		end
+
+		if getVehicleOccupant(jobVehicle,0) ~= jobPlayer then
+			destroyTankwartJob(jobPlayer)
+		end
+	end,30000,0,player)
+
+	triggerClientEvent(player,"createTankMarker",player)
+	infobox_func(player,getText(player,"Tankwart3"),0,255,0)
+end
+addCommandHandler("tankjob",StartTankwart)
+
+function AnhaengerCheckTankWart()
+	local player = client
+
+	if not player or not isElement(player) then return end
+	if getElementData(player,"loggedin") ~= 1 then return end
+	if getElementData(player,"Job") ~= "Tankwart" then return end
+	if getElementData(player,"TankwartAktiv") ~= true then return end
+
+	local vehicle = getPedOccupiedVehicle(player)
+
+	if not isElement(vehicle) then return end
+	if getPedOccupiedVehicleSeat(player) ~= 0 then return end
+
+	if vehicle ~= tankwartVehicles[player] then
+		return
+	end
+
+	local trailer = getVehicleTowedByVehicle(vehicle)
+
+	if not isElement(trailer) or trailer ~= tankwartTrailers[player] then
+		infobox_func(player,getText(player,"Tankwart4"),255,0,0)
+		return
+	end
+
+	local skills = tonumber(getElementData(player,"Tankwartjobskills")) or 0
+	local money = 0
+
+	if skills < 100 then
+		money = 200
+	elseif skills < 200 then
+		money = 400
+	else
+		money = 600
+	end
+
+	giveJobMoney(player,money)
+
+	triggerClientEvent(player,"destroyTankShit",player)
+	triggerClientEvent(player,"createTankMarker",player)
+
+	infobox_func(player,getText(player,"Tankwart5"):format(money),0,255,0)
+end
+addEvent("AnhaengerCheckTankWart",true)
+addEventHandler("AnhaengerCheckTankWart",root,AnhaengerCheckTankWart)
+
+addEventHandler("onPlayerQuit",root,function()
+	destroyTankwartJob(source)
+end)
+
+addEventHandler("onPlayerWasted",root,function()
+	if getElementData(source,"TankwartAktiv") == true then
+		destroyTankwartJob(source)
+	end
+end)

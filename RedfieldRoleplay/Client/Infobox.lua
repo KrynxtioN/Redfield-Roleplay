@@ -1,46 +1,44 @@
-local x,y = guiGetScreenSize()
-local infoboxActiv = false
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1440, sy / 900)
+local infoboxActive = false
+local infoboxText = ""
+local colorR, colorG, colorB = 255, 255, 255
+local infoboxTimer = nil
 
-function infobox(text,r,g,b)
-	infoboxtext = text
-	farbeR = r
-	farbeG = g
-	farbeB = b
-	
-	--if(getElementData(localPlayer,'Infobox')==0)then
-		if(infoboxActiv == false)then
-			infoboxActiv = true
-			addEventHandler('onClientRender',root,dxdrawInfobox)
-			setTimer(function()
-				infoboxActiv = false
-				removeEventHandler('onClientRender',root,dxdrawInfobox)
-			end,5000,1)
-		end
-	--else outputChatBox(infoboxtext,farbeR,farbeG,farbeB)end
+function dxdrawInfobox()
+	local w, h = 359 * scale, 125 * scale
+	local x, y = (sx - w) / 2, 14 * scale
+	local headerH = 26 * scale
+	dxDrawRectangle(x, y, w, h, tocolor(0, 0, 0, 145), false)
+	dxDrawRectangle(x, y, w, 3 * scale, tocolor(0, 100, 200, 230), false)
+	dxDrawRectangle(x, y + headerH, w, 2 * scale, tocolor(0, 100, 200, 210), false)
+	dxDrawText(getText("UIInfoboxTitle"), x + 10 * scale, y, x + w - 10 * scale, y + headerH, tocolor(255, 255, 255, 255), 1, "default-bold", "center", "center")
+	dxDrawText(infoboxText, x + 12 * scale, y + headerH + 8 * scale, x + w - 12 * scale, y + h - 8 * scale, tocolor(colorR, colorG, colorB, 255), 1, "default-bold", "center", "center", false, true, false)
 end
-addEvent('infobox',true)
-addEventHandler('infobox',root,infobox)
 
-function dxdrawInfobox(text,r,g,b)
-	dxDrawRectangle(544*(x/1440), 14*(y/900), 359*(x/1440), 141*(y/900), tocolor(0, 0, 0, 200), false)
-	dxDrawRectangle(544*(x/1440), 14*(y/900), 359*(x/1440), 20*(y/900), tocolor(254, 254, 254, 255), false)
-	dxDrawText('Infobox', 632*(x/1440), 17*(y/900), 818*(x/1440), 34*(y/900), tocolor(171, 0, 0, 255), 1.00, 'default-bold', 'center', 'top', false, false, false, false, false)
-	dxDrawText(infoboxtext, 555*(x/1440), 40*(y/900), 893*(x/1440), 145*(y/900), tocolor(farbeR,farbeG,farbeB, 255), 1.00, 'sans', 'center', 'center', false, true, false, false, false)
+function infobox(text, r, g, b)
+	infoboxText = tostring(text or "")
+	colorR, colorG, colorB = tonumber(r) or 255, tonumber(g) or 255, tonumber(b) or 255
+	if isTimer(infoboxTimer) then killTimer(infoboxTimer) end
+	if not infoboxActive then
+		infoboxActive = true
+		addEventHandler("onClientRender", root, dxdrawInfobox)
+	end
+	infoboxTimer = setTimer(function()
+		infoboxActive = false
+		removeEventHandler("onClientRender", root, dxdrawInfobox)
+		infoboxTimer = nil
+	end, 5000, 1)
 end
+
+addEvent("infobox", true)
+addEventHandler("infobox", root, infobox)
 
 function changeInfobox_func()
-	if(getElementData(localPlayer,'loggedin') == 1)then
-		if(getElementData(localPlayer,'Infobox') == 0)then
-			setElementData(localPlayer,'Infobox',1)
-		else
-			setElementData(localPlayer,'Infobox',0)
-		end
-		
-		if(getElementData(localPlayer,'Language') == 0)then
-			infobox('Infobox gewechselt.',0,255,0)
-		else
-			infobox('Changed infobox.',0,255,0)
-		end
-	end
+	if getElementData(localPlayer, "loggedin") ~= 1 then return end
+	local enabled = tonumber(getElementData(localPlayer, "Infobox")) or 0
+	setElementData(localPlayer, "Infobox", enabled == 0 and 1 or 0)
+	infobox(getText("UIInfoboxChanged"), 0, 255, 0)
 end
-addCommandHandler('infobox',changeInfobox_func)
+
+addCommandHandler("infobox", changeInfobox_func)

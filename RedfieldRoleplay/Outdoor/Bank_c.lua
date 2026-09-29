@@ -1,91 +1,105 @@
-local Bankverwaltung = {button = {},window = {},label = {}}
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
 
-local openBankverwaltungWindowPickup = createPickup(362.37442016602,173.54965209961,1008.3828125,3,1239,50)
-setElementInterior(openBankverwaltungWindowPickup,3)
-setElementDimension(openBankverwaltungWindowPickup,1)
+local bankverwaltungVisible = false
 
-function bankverwaltungWindow(hitPlayer)
-	if(getElementData(localPlayer,'redfieldClick') == false)then
-		if(getElementDimension(localPlayer) == 1)then
-			--if(hitPlayer == localPlayer)then
-				if(not(isElement(Bankverwaltung.window[1])))then
-					showCursor(true)
-					setElementData(localPlayer,'redfieldClick',true)
-				
-					Bankverwaltung.window[1] = guiCreateStaticImage(0.40, 0.39, 0.21, 0.21, 'Images/Background.png', true)
-					
-					Bankverwaltung.button[1] = guiCreateButton(0.03, 0.58, 0.43, 0.14, 'Konto eröffnen', true, Bankverwaltung.window[1])
-					guiSetProperty(Bankverwaltung.button[1], 'NormalTextColour', 'FFAAAAAA')
-					Bankverwaltung.button[2] = guiCreateButton(0.54, 0.58, 0.43, 0.14, 'Pin nachfragen', true, Bankverwaltung.window[1])
-					guiSetProperty(Bankverwaltung.button[2], 'NormalTextColour', 'FFAAAAAA')
-					Bankverwaltung.button[3] = guiCreateButton(0.29, 0.81, 0.43, 0.14, 'Schließen', true, Bankverwaltung.window[1])
-					guiSetProperty(Bankverwaltung.button[3], 'NormalTextColour', 'FFAAAAAA')
-					
-					Bankverwaltung.label[1] = guiCreateLabel(0.03, 0.15, 0.93, 0.34, 'Um dein Geld besser verwalten zu können, benötigst du ein Konto, welches du hier erstellen lassen kannst.', true, Bankverwaltung.window[1])
-					guiSetFont(Bankverwaltung.label[1], 'default-bold-small')
-					guiLabelSetHorizontalAlign(Bankverwaltung.label[1], 'center', true)
-					guiLabelSetVerticalAlign(Bankverwaltung.label[1], 'center')
-					
-					if(getElementData(localPlayer,'Language') == 1)then
-						guiSetText(Bankverwaltung.button[1],'Create a bank account')
-						guiSetText(Bankverwaltung.button[2],'Ask for your pin')
-						guiSetText(Bankverwaltung.button[3],'Close')
-						guiSetText(Bankverwaltung.label[1],'Create a Bank-Account, to manage your money better.')
-					end
-					
-					addEventHandler('onClientGUIClick',Bankverwaltung.button[1],function()
-						local bankpin = getElementData(localPlayer,'Bankpin')
-						
-						if(bankpin == 0)then
-							local createPin = math.random(1000,9999)
-							
-							setElementData(localPlayer,'Bankpin',createPin)
-							if(getElementData(localPlayer,'Language') == 0)then
-								infobox('Dein Pin lautet: '..createPin,0,255,0)
-							else
-								infobox('Your pin: '..createPin,0,255,0)
-							end
-							
-							if(getElementData(localPlayer,'AchKonto') == 0)then
-								setElementData(localPlayer,'AchKonto',1)
-								triggerServerEvent('achievmentInfo',localPlayer,localPlayer)
-							end
-						else
-							if(getElementData(localPlayer,'Language') == 0)then
-								infobox('Du hast bereits ein Konto!',255,0,0)
-							else
-								infobox('You already have a account!',255,0,0)
-							end
-						end
-					end,false)
-					
-					addEventHandler('onClientGUIClick',Bankverwaltung.button[2],function()
-						local bankpin=getElementData(localPlayer,'Bankpin')
-						
-						if(not(bankpin == 0))then
-							if(getElementData(localPlayer,'Language') == 0)then
-								infobox('Dein Pin lautet: '..bankpin,0,255,0)
-							else
-								infobox('Your pin: '..bankpin,0,255,0)
-							end
-						else
-							if(getElementData(localPlayer,'Language') == 0)then
-								infobox('Du hast kein Konto!',255,0,0)
-							else
-								infobox('You have no account!',255,0,0)
-							end
-						end
-					end,false)
-					
-					addEventHandler('onClientGUIClick',Bankverwaltung.button[3],function()
-						showCursor(false)
-						destroyElement(Bankverwaltung.window[1])
-						setElementData(localPlayer,'redfieldClick',false)
-					end,false)
-				end
-			--end
-		end
+local function isCursorOnElement(x, y, width, height)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + width and cy >= y and cy <= y + height
+end
+
+local function getBankverwaltungLayout()
+	local width, height = 460 * scale, 300 * scale
+	local x, y = (sx - width) / 2, (sy - height) / 2
+	local padding = 15 * scale
+	return x, y, width, height, padding
+end
+
+local function drawButton(text, x, y, width, height)
+	local hover = isCursorOnElement(x, y, width, height)
+	dxDrawRectangle(x, y, width, height, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + height - 2 * scale, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + width - 8 * scale, y + height, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+end
+
+local function drawBankverwaltung()
+	if not bankverwaltungVisible then return end
+
+	local x, y, width, height, padding = getBankverwaltungLayout()
+	local contentWidth = width - padding * 2
+	local textY = y + 18 * scale
+	local textHeight = 115 * scale
+	local buttonHeight = 42 * scale
+	local buttonGap = 10 * scale
+	local buttonWidth = (contentWidth - buttonGap) / 2
+	local buttonY = textY + textHeight + 15 * scale
+	local closeY = buttonY + buttonHeight + 10 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawRectangle(x + padding, textY, contentWidth, textHeight, tocolor(20, 20, 20, 255), false)
+	dxDrawRectangle(x + padding, textY, 3 * scale, textHeight, tocolor(0, 100, 200, 255), false)
+	dxDrawText(getText("Bankverwaltung4"), x + padding + 15 * scale, textY + 10 * scale, x + width - padding - 15 * scale, textY + textHeight - 10 * scale, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true, true)
+
+	drawButton(getText("Bankverwaltung1"), x + padding, buttonY, buttonWidth, buttonHeight)
+	drawButton(getText("Bankverwaltung2"), x + padding + buttonWidth + buttonGap, buttonY, buttonWidth, buttonHeight)
+	drawButton(getText("Bankverwaltung3"), x + padding, closeY, contentWidth, buttonHeight)
+end
+
+function closeBankverwaltungWindow()
+	if not bankverwaltungVisible then return end
+
+	bankverwaltungVisible = false
+	removeEventHandler("onClientRender", root, drawBankverwaltung)
+	removeEventHandler("onClientClick", root, bankverwaltungClick)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+end
+
+function bankverwaltungClick(button, state)
+	if not bankverwaltungVisible or button ~= "left" or state ~= "down" then return end
+
+	local x, y, width, height, padding = getBankverwaltungLayout()
+	local contentWidth = width - padding * 2
+	local textY = y + 18 * scale
+	local textHeight = 115 * scale
+	local buttonHeight = 42 * scale
+	local buttonGap = 10 * scale
+	local buttonWidth = (contentWidth - buttonGap) / 2
+	local buttonY = textY + textHeight + 15 * scale
+	local closeY = buttonY + buttonHeight + 10 * scale
+
+	if isCursorOnElement(x + padding, buttonY, buttonWidth, buttonHeight) then
+		triggerServerEvent("createBankAccount", localPlayer)
+		return
+	end
+
+	if isCursorOnElement(x + padding + buttonWidth + buttonGap, buttonY, buttonWidth, buttonHeight) then
+		triggerServerEvent("requestBankPin", localPlayer)
+		return
+	end
+
+	if isCursorOnElement(x + padding, closeY, contentWidth, buttonHeight) then
+		closeBankverwaltungWindow()
 	end
 end
-addEvent("bankverwaltungWindow",true)
-addEventHandler("bankverwaltungWindow",root,bankverwaltungWindow)
+
+function bankverwaltungWindow()
+	if bankverwaltungVisible then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+
+	bankverwaltungVisible = true
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	addEventHandler("onClientRender", root, drawBankverwaltung)
+	addEventHandler("onClientClick", root, bankverwaltungClick)
+end
+addEvent("bankverwaltungWindow", true)
+addEventHandler("bankverwaltungWindow", root, bankverwaltungWindow)
+
+addEventHandler("onClientPlayerWasted", localPlayer, function()
+	closeBankverwaltungWindow()
+end)

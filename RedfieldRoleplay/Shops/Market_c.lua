@@ -1,113 +1,139 @@
-local supermarkt = {gridlist = {},window = {},button = {}}
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
 
-function supermarktWindow()
-	if(getElementData(localPlayer,'redfieldClick') == false)then
-		if(not(isElement(supermarkt.window[1])))then
-			showCursor(true)
-			setElementData(localPlayer,'redfieldClick',true)
-		
-			supermarkt.window[1] = guiCreateStaticImage(0.40, 0.31, 0.21, 0.35, 'Images/Background.png', true)
+local supermarktOpen = false
+local selectedItem = nil
 
-			supermarkt.gridlist[1] = guiCreateGridList(0.04, 0.09, 0.92, 0.72, true, supermarkt.window[1])
-			if(getElementData(localPlayer,'Language')==0)then
-			guiGridListAddColumn(supermarkt.gridlist[1], 'Artikel', 0.5)
-			guiGridListAddColumn(supermarkt.gridlist[1], 'Preis', 0.5)
-			else
-			guiGridListAddColumn(supermarkt.gridlist[1], 'Article', 0.5)
-			guiGridListAddColumn(supermarkt.gridlist[1], 'Price', 0.5)
-			end
-			for i = 1, 3 do
-				guiGridListAddRow(supermarkt.gridlist[1])
-			end
-			guiGridListSetItemText(supermarkt.gridlist[1], 0, 2, '350$', false, false)
-			guiGridListSetItemText(supermarkt.gridlist[1], 1, 2, '3$', false, false)
-			if(getElementData(localPlayer,'Language')==0)then
-				guiGridListSetItemText(supermarkt.gridlist[1], 0, 1, 'Handy', false, false)
-				guiGridListSetItemText(supermarkt.gridlist[1], 1, 1, 'Snack', false, false)
-				guiGridListSetItemText(supermarkt.gridlist[1], 2, 1, 'Los', false, false)
-			else
-				guiGridListSetItemText(supermarkt.gridlist[1], 0, 1, 'Phone', false, false)
-				guiGridListSetItemText(supermarkt.gridlist[1], 1, 1, 'Snack', false, false)
-				guiGridListSetItemText(supermarkt.gridlist[1], 2, 1, 'Scratch card', false, false)
-			end
-			guiGridListSetItemText(supermarkt.gridlist[1], 2, 2, '25$', false, false)
-			supermarkt.button[1] = guiCreateButton(0.04, 0.83, 0.41, 0.09, 'Kaufen', true, supermarkt.window[1])
-			guiSetProperty(supermarkt.button[1], 'NormalTextColour', 'FFAAAAAA')
-			supermarkt.button[2] = guiCreateButton(0.54, 0.83, 0.41, 0.09, 'Schließen', true, supermarkt.window[1])
-			guiSetProperty(supermarkt.button[2], 'NormalTextColour', 'FFAAAAAA')
-			
-			if(getElementData(localPlayer,'Language')==1)then guiSetText(supermarkt.button[1],'Buy')
-			guiSetText(supermarkt.button[2],'Close')end
-			
-			addEventHandler('onClientGUIClick',supermarkt.button[1],function()
-				selectedText=guiGridListGetItemText(supermarkt.gridlist[1],guiGridListGetSelectedItem(supermarkt.gridlist[1]),1)
-				
-				if(selectedText == 'Handy' or selectedText == 'Phone')then
-					if(getPlayerMoney(localPlayer) >= 350)then
-						if(getElementData(localPlayer,'Telefonnummer') == 0)then
-							newNR = math.random(1000000,9999999)
-							triggerServerEvent('takemoneyshop',localPlayer,350)
-							setElementData(localPlayer,'Telefonnummer',newNR)
-							markertBuyItem()
-							if(getElementData(localPlayer,'Language') == 0)then
-								outputChatBox('Deine Telefonnummer ist: '..newNR,0,150,0)
-							else
-								outputChatBox('Your phone number: '..newNR,0,150,0)
-							end
-						else
-							if(getElementData(localPlayer,'Language') == 0)then
-								infobox('Du hast bereits ein Handy!',255,0,0)
-							else
-								infobox('You already have a phone!',255,0,0)
-							end
-						end
-					else
-						markerNotEnoughMoney_func()
-					end
-				elseif(selectedText == 'Snack')then
-					if(getPlayerMoney(localPlayer) >= 3)then
-						markertBuyItem()
-						setElementData(localPlayer,'Hunger',getElementData(localPlayer,'Hunger') + 10)
-						if(getElementData(localPlayer,'Hunger') > 100)then
-							setElementData(localPlayer,'Hunger',100)
-						end
-						triggerServerEvent('takemoneyshop',localPlayer,3)
-					else
-						markerNotEnoughMoney_func()
-					end
-				elseif(selectedText == 'Los' or selectedText == 'Scratch card')then
-					if(getPlayerMoney(localPlayer) >= 25)then
-						triggerServerEvent('los',localPlayer,localPlayer)
-						triggerServerEvent('takemoneyshop',localPlayer,25)
-					else
-						markerNotEnoughMoney_func()
-					end
-				end
-			end,false)
-			
-			addEventHandler('onClientGUIClick',supermarkt.button[2],function()
-				destroyElement(supermarkt.window[1])
-				showCursor(false)
-				setElementData(localPlayer,'redfieldClick',false)
-			end,false)
+local supermarktItems = {
+	{text = "Supermarkt3", price = "$350"},
+	{text = "Supermarkt4", price = "$3"},
+	{text = "Supermarkt5", price = "$25"}
+}
+
+local function isCursorOnElement(x, y, w, h)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + w and cy >= y and cy <= y + h
+end
+
+local function getSupermarktLayout()
+	local w, h = 460 * scale, 360 * scale
+	local x, y = (sx - w) / 2, (sy - h) / 2
+	local padding = 15 * scale
+	return x, y, w, h, padding
+end
+
+local function drawButton(text, x, y, w, h)
+	local hover = isCursorOnElement(x, y, w, h)
+	dxDrawRectangle(x, y, w, h, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + h - 2 * scale, w, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + w - 8 * scale, y + h, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+end
+
+local function renderSupermarkt()
+	if not supermarktOpen then return end
+
+	local x, y, w, h, padding = getSupermarktLayout()
+	local contentW = w - padding * 2
+	local columnH = 36 * scale
+	local rowH = 48 * scale
+	local listY = y + 25 * scale
+	local priceW = 110 * scale
+	local nameW = contentW - priceW
+	local buttonH = 42 * scale
+	local buttonGap = 10 * scale
+	local buttonW = (contentW - buttonGap) / 2
+	local buttonY = y + h - padding - buttonH
+
+	dxDrawRectangle(x, y, w, h, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, w, 3 * scale, tocolor(0, 100, 200, 255), false)
+
+	dxDrawRectangle(x + padding, listY, contentW, columnH, tocolor(20, 20, 20, 255), false)
+	dxDrawText(getText("Supermarkt1"), x + padding + 10 * scale, listY, x + padding + nameW, listY + columnH, tocolor(200, 200, 200, 255), 1 * scale, "default-bold", "left", "center", true)
+	dxDrawText(getText("Supermarkt2"), x + padding + nameW, listY, x + padding + contentW - 10 * scale, listY + columnH, tocolor(200, 200, 200, 255), 1 * scale, "default-bold", "right", "center", true)
+
+	for i, item in ipairs(supermarktItems) do
+		local rowY = listY + columnH + (i - 1) * rowH
+		local hover = isCursorOnElement(x + padding, rowY, contentW, rowH - 2 * scale)
+
+		if selectedItem == i then
+			dxDrawRectangle(x + padding, rowY, contentW, rowH - 2 * scale, tocolor(0, 100, 200, 255), false)
+		elseif hover then
+			dxDrawRectangle(x + padding, rowY, contentW, rowH - 2 * scale, tocolor(35, 35, 35, 255), false)
+		else
+			dxDrawRectangle(x + padding, rowY, contentW, rowH - 2 * scale, tocolor(22, 22, 22, 255), false)
+		end
+
+		dxDrawText(getText(item.text), x + padding + 10 * scale, rowY, x + padding + nameW, rowY + rowH - 2 * scale, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "left", "center", true)
+		dxDrawText(item.price, x + padding + nameW, rowY, x + padding + contentW - 10 * scale, rowY + rowH - 2 * scale, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "right", "center")
+	end
+
+	drawButton(getText("Supermarkt6"), x + padding, buttonY, buttonW, buttonH)
+	drawButton(getText("Supermarkt7"), x + padding + buttonW + buttonGap, buttonY, buttonW, buttonH)
+end
+
+function closeSupermarktWindow()
+	if not supermarktOpen then return end
+	supermarktOpen = false
+	selectedItem = nil
+	removeEventHandler("onClientRender", root, renderSupermarkt)
+	removeEventHandler("onClientClick", root, supermarktClick)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+end
+
+function supermarktClick(button, state)
+	if not supermarktOpen or button ~= "left" or state ~= "down" then return end
+
+	local x, y, w, h, padding = getSupermarktLayout()
+	local contentW = w - padding * 2
+	local columnH = 36 * scale
+	local rowH = 48 * scale
+	local listY = y + 25 * scale
+	local buttonH = 42 * scale
+	local buttonGap = 10 * scale
+	local buttonW = (contentW - buttonGap) / 2
+	local buttonY = y + h - padding - buttonH
+
+	for i = 1, #supermarktItems do
+		local rowY = listY + columnH + (i - 1) * rowH
+		if isCursorOnElement(x + padding, rowY, contentW, rowH - 2 * scale) then
+			selectedItem = i
+			return
 		end
 	end
-end
-addEvent('opensupermarktWindow',true)
-addEventHandler('opensupermarktWindow',root,supermarktWindow)
 
-function markerNotEnoughMoney_func()
-	if(getElementData(localPlayer,'Language') == 0)then
-		infobox('Du hast nicht genug Geld!',255,0,0)
-	else
-		infobox('You have not enough money!',255,0,0)
+	if isCursorOnElement(x + padding, buttonY, buttonW, buttonH) then
+		if not selectedItem or not supermarktItems[selectedItem] then
+			infobox(getText("Supermarkt8"), 255, 0, 0)
+			return
+		end
+
+		triggerServerEvent("Supermarkt.buy", localPlayer, getText(supermarktItems[selectedItem].text))
+		return
+	end
+
+	if isCursorOnElement(x + padding + buttonW + buttonGap, buttonY, buttonW, buttonH) then
+		closeSupermarktWindow()
 	end
 end
 
-function markertBuyItem()
-	if(getElementData(localPlayer,'Language') == 0)then
-		infobox('Du hast den Artikel gekauft.',0,255,0)
-	else
-		infobox('You´ve bought the item.',0,255,0)
-	end
+function supermarktWindow()
+	if supermarktOpen then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+
+	supermarktOpen = true
+	selectedItem = nil
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	addEventHandler("onClientRender", root, renderSupermarkt)
+	addEventHandler("onClientClick", root, supermarktClick)
 end
+addEvent("opensupermarktWindow", true)
+addEventHandler("opensupermarktWindow", root, supermarktWindow)
+
+addEventHandler("onClientPlayerWasted", localPlayer, function()
+	closeSupermarktWindow()
+end)

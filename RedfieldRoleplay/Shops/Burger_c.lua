@@ -1,51 +1,109 @@
-local burger = {button = {},window = {},label = {}}
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
 
-function burgerWindow()
-	if(getElementData(localPlayer,'redfieldClick') == false)then
-		if(not(isElement(burger.window[1])))then
-			showCursor(true)
-			setElementData(localPlayer,'redfieldClick',true)
-			
-			burger.window[1] = guiCreateStaticImage(0.40, 0.38, 0.21, 0.27, 'Images/Background.png', true)
-			
-			burger.label[1] = guiCreateLabel(0.04, 0.11, 0.93, 0.15, 'Was darf es sein?', true, burger.window[1])
-			guiSetFont(burger.label[1], 'default-bold-small')
-			guiLabelSetHorizontalAlign(burger.label[1], 'center', true)
-			guiLabelSetVerticalAlign(burger.label[1], 'center')
+local burgerOpen = false
 
-			burger.button[1] = guiCreateButton(0.13, 0.31, 0.74, 0.12, 'Kleines Burger Menü (10$)', true, burger.window[1])
-			guiSetProperty(burger.button[1], 'NormalTextColour', 'FFAAAAAA')
-			burger.button[2] = guiCreateButton(0.13, 0.47, 0.74, 0.12, 'Mittleres Burger Menü (25$)', true, burger.window[1])
-			guiSetProperty(burger.button[2], 'NormalTextColour', 'FFAAAAAA')
-			burger.button[3] = guiCreateButton(0.13, 0.64, 0.74, 0.12, 'Großes Burger Menü (50$)', true, burger.window[1])
-			guiSetProperty(burger.button[3], 'NormalTextColour', 'FFAAAAAA')
-			burger.button[4] = guiCreateButton(0.13, 0.80, 0.74, 0.12, 'Schließen', true, burger.window[1])
-			guiSetProperty(burger.button[4], 'NormalTextColour', 'FFAAAAAA')
-			
-			if(getElementData(localPlayer,'Language') == 1)then
-				guiSetText(burger.button[1],'Small Burger (10$)')
-				guiSetText(burger.button[2],'Middle Burger (25$)')
-				guiSetText(burger.button[3],'Big Burger (50$)')
-				guiSetText(burger.button[4],'Close')
-				guiSetText(burger.label[1],'What do you want?')
-			end
+local burgerItems = {
+	{key = "klein", text = "BurgerShop2"},
+	{key = "mittel", text = "BurgerShop3"},
+	{key = "groß", text = "BurgerShop4"}
+}
 
-			addEventHandler('onClientGUIClick',burger.button[1],function()
-				triggerServerEvent('buyburger',localPlayer,'klein')
-			end,false)
-			addEventHandler('onClientGUIClick',burger.button[2],function()
-				triggerServerEvent('buyburger',localPlayer,'mittel')
-			end,false)
-			addEventHandler('onClientGUIClick',burger.button[3],function()
-				triggerServerEvent('buyburger',localPlayer,'groß')
-			end,false)
-			addEventHandler('onClientGUIClick',burger.button[4],function()
-				destroyElement(burger.window[1])
-				showCursor(false)
-				setElementData(localPlayer,'redfieldClick',false)
-			end,false)
+local function isCursorOnElement(x, y, w, h)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + w and cy >= y and cy <= y + h
+end
+
+local function getBurgerLayout()
+	local w, h = 460 * scale, 330 * scale
+	local x, y = (sx - w) / 2, (sy - h) / 2
+	local padding = 15 * scale
+	return x, y, w, h, padding
+end
+
+local function drawButton(text, x, y, w, h)
+	local hover = isCursorOnElement(x, y, w, h)
+	dxDrawRectangle(x, y, w, h, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + h - 2 * scale, w, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + w - 8 * scale, y + h, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+end
+
+local function renderBurger()
+	if not burgerOpen then return end
+
+	local x, y, w, h, padding = getBurgerLayout()
+	local contentW = w - padding * 2
+	local infoY = y + 18 * scale
+	local infoH = 70 * scale
+	local buttonH = 44 * scale
+	local buttonGap = 10 * scale
+	local buttonY = infoY + infoH + 15 * scale
+
+	dxDrawRectangle(x, y, w, h, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, w, 3 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawRectangle(x + padding, infoY, contentW, infoH, tocolor(20, 20, 20, 255), false)
+	dxDrawRectangle(x + padding, infoY, 3 * scale, infoH, tocolor(0, 100, 200, 255), false)
+	dxDrawText(getText("BurgerShop1"), x + padding + 15 * scale, infoY + 8 * scale, x + w - padding - 15 * scale, infoY + infoH - 8 * scale, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true, true)
+
+	for i, item in ipairs(burgerItems) do
+		local currentY = buttonY + (i - 1) * (buttonH + buttonGap)
+		drawButton(getText(item.text), x + padding, currentY, contentW, buttonH)
+	end
+
+	local closeY = buttonY + #burgerItems * (buttonH + buttonGap)
+	drawButton(getText("BurgerShop5"), x + padding, closeY, contentW, buttonH)
+end
+
+function closeBurgerWindow()
+	if not burgerOpen then return end
+	burgerOpen = false
+	removeEventHandler("onClientRender", root, renderBurger)
+	removeEventHandler("onClientClick", root, burgerClick)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+end
+
+function burgerClick(button, state)
+	if not burgerOpen or button ~= "left" or state ~= "down" then return end
+
+	local x, y, w, h, padding = getBurgerLayout()
+	local contentW = w - padding * 2
+	local infoY = y + 18 * scale
+	local infoH = 70 * scale
+	local buttonH = 44 * scale
+	local buttonGap = 10 * scale
+	local buttonY = infoY + infoH + 15 * scale
+
+	for i, item in ipairs(burgerItems) do
+		local currentY = buttonY + (i - 1) * (buttonH + buttonGap)
+		if isCursorOnElement(x + padding, currentY, contentW, buttonH) then
+			triggerServerEvent("buyburger", localPlayer, item.key)
+			return
 		end
 	end
+
+	local closeY = buttonY + #burgerItems * (buttonH + buttonGap)
+	if isCursorOnElement(x + padding, closeY, contentW, buttonH) then
+		closeBurgerWindow()
+	end
 end
-addEvent('openBurgerWindow',true)
-addEventHandler('openBurgerWindow',root,burgerWindow)
+
+function burgerWindow()
+	if burgerOpen then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+
+	burgerOpen = true
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	addEventHandler("onClientRender", root, renderBurger)
+	addEventHandler("onClientClick", root, burgerClick)
+end
+addEvent("openBurgerWindow", true)
+addEventHandler("openBurgerWindow", root, burgerWindow)
+
+addEventHandler("onClientPlayerWasted", localPlayer, function()
+	closeBurgerWindow()
+end)

@@ -1,341 +1,355 @@
-for i = 1,4 do
-    setInteriorFurnitureEnabled(i,false)
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
+
+for i = 1, 4 do
+	setInteriorFurnitureEnabled(i, false)
 end
 
 local showNormalObjectTabelle = {
-[1] = {1704,500},
-[2] = {1705,500},
-[3] = {1708,600},
-[4] = {1711,650},
-[5] = {1720,700},
-[6] = {1723,800},
-[7] = {1726,900},
-[8] = {1727,400},
-[9] = {1728,900},
-[10] = {1729,500},
-[11] = {1739,200},
-[12] = {1825,1000},
-[13] = {1896,1200},
-[14] = {1998,800},
-[15] = {2096,500},
-[16] = {2205,800},
-[17] = {2313,750},
-[18] = {1518,1400},
-[19] = {1752,1600},
-[20] = {1786,1800},
-[21] = {16377,900},
+	{1704, 500}, {1705, 500}, {1708, 600}, {1711, 650}, {1720, 700}, {1723, 800}, {1726, 900},
+	{1727, 400}, {1728, 900}, {1729, 500}, {1739, 200}, {1825, 1000}, {1896, 1200}, {1998, 800},
+	{2096, 500}, {2205, 800}, {2313, 750}, {1518, 1400}, {1752, 1600}, {1786, 1800}, {16377, 900}
 }
 
 local showBathObjectsTabelle = {
-[1] = {2526,3000},
-[2] = {2514,1200},
-[3] = {2527,2000},
-[4] = {2524,1000},
+	{2526, 3000}, {2514, 1200}, {2527, 2000}, {2524, 1000}
 }
 
 local showOutsideObjectTabelle = {
-[1] = {638,600},
-[2] = {970,700},
-[3] = {17037,2000},
+	{638, 600}, {970, 700}, {17037, 2000}
 }
 
-local furnitureKategorie = {button = {},window = {}}
+local furnitureKategorieVisible = false
+local showNormalObjectNumber, showBathObjectNumber, showOutdoorObjectNumber
+local showNormalObjects, showBathObjects, showOutsideObjects
+local showObject, dropObjekt, massDistance, camX, camY, camZ
+
+local higher = {
+	[638] = 0.6,
+	[970] = 0.5,
+	[17037] = 2.3
+}
+
+local function isCursorOnElement(x, y, width, height)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + width and cy >= y and cy <= y + height
+end
+
+local function getFurnitureLayout()
+	local width = math.min(390 * scale, sx * 0.45)
+	local height = math.min(245 * scale, sy * 0.45)
+	local x = (sx - width) / 2
+	local y = (sy - height) / 2
+	local padding = 15 * scale
+	return x, y, width, height, padding
+end
+
+local function drawFurnitureButton(text, x, y, width, height)
+	local hover = isCursorOnElement(x, y, width, height)
+	dxDrawRectangle(x, y, width, height, hover and tocolor(0, 100, 200, 255) or tocolor(35, 35, 35, 255), false)
+	dxDrawRectangle(x, y + height - 2 * scale, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + width - 8 * scale, y + height, tocolor(255, 255, 255, 255), 1, "default-bold", "center", "center", true, false, false)
+end
+
+local function drawFurnitureKategorie()
+	if not furnitureKategorieVisible then return end
+	local x, y, width, height, padding = getFurnitureLayout()
+	local buttonWidth = width - padding * 2
+	local buttonHeight = 48 * scale
+	local gap = 10 * scale
+	local buttonY = y + 38 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+
+	drawFurnitureButton(getText("Furniture8"), x + padding, buttonY, buttonWidth, buttonHeight)
+	drawFurnitureButton(getText("Furniture9"), x + padding, buttonY + buttonHeight + gap, buttonWidth, buttonHeight)
+	drawFurnitureButton(getText("Furniture10"), x + padding, buttonY + (buttonHeight + gap) * 2, buttonWidth, buttonHeight)
+end
+
+local function closeFurnitureKategorie()
+	if not furnitureKategorieVisible then return end
+	furnitureKategorieVisible = false
+	removeEventHandler("onClientRender", root, drawFurnitureKategorie)
+	removeEventHandler("onClientClick", root, clickFurnitureKategorie)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+end
+
+local function startFurniturePreview(category)
+	if category == 1 then
+		showNormalObjectNumber = 1
+		showNormalObjects, showBathObjects, showOutsideObjects = true, false, false
+		showObject = createObject(showNormalObjectTabelle[showNormalObjectNumber][1], 1723.720703125, -1663.48046875, 36.38969039917)
+	elseif category == 2 then
+		showBathObjectNumber = 1
+		showNormalObjects, showBathObjects, showOutsideObjects = false, true, false
+		showObject = createObject(showBathObjectsTabelle[showBathObjectNumber][1], 1723.720703125, -1663.48046875, 36.38969039917)
+	elseif category == 3 then
+		showOutdoorObjectNumber = 1
+		showNormalObjects, showBathObjects, showOutsideObjects = false, false, true
+		showObject = createObject(showOutsideObjectTabelle[showOutdoorObjectNumber][1], 1723.720703125, -1663.48046875, 36.38969039917)
+	end
+
+	if not isElement(showObject) then
+		showNormalObjects, showBathObjects, showOutsideObjects = false, false, false
+		return
+	end
+
+	setElementInterior(showObject, 18)
+	furnitureKategorieVisible = false
+	removeEventHandler("onClientRender", root, drawFurnitureKategorie)
+	removeEventHandler("onClientClick", root, clickFurnitureKategorie)
+	showCursor(false)
+	createAllForObject()
+end
+
+function clickFurnitureKategorie(button, state)
+	if not furnitureKategorieVisible or button ~= "left" or state ~= "down" then return end
+	local x, y, width, height, padding = getFurnitureLayout()
+	local buttonWidth = width - padding * 2
+	local buttonHeight = 48 * scale
+	local gap = 10 * scale
+	local buttonY = y + 38 * scale
+
+	if isCursorOnElement(x + padding, buttonY, buttonWidth, buttonHeight) then
+		startFurniturePreview(1)
+	elseif isCursorOnElement(x + padding, buttonY + buttonHeight + gap, buttonWidth, buttonHeight) then
+		startFurniturePreview(2)
+	elseif isCursorOnElement(x + padding, buttonY + (buttonHeight + gap) * 2, buttonWidth, buttonHeight) then
+		startFurniturePreview(3)
+	end
+end
 
 function openFurnitureKategorieWindow()
-	if(not(isElement(furnitureKategorie.window[1])))then
-		if(not(getElementData(localPlayer,'redfieldClick')) == true)then
-			showCursor(true)
-			setElementData(localPlayer,'redfieldClick',true)
-		
-			furnitureKategorie.window[1] = guiCreateStaticImage(0.40, 0.41, 0.21, 0.17, 'Images/Background.png', true)
-
-			furnitureKategorie.button[1] = guiCreateButton(0.03, 0.19, 0.93, 0.18, 'Normale Möbel', true, furnitureKategorie.window[1])
-			guiSetProperty(furnitureKategorie.button[1], 'NormalTextColour', 'FFAAAAAA')
-			furnitureKategorie.button[2] = guiCreateButton(0.03, 0.47, 0.93, 0.18, 'Badezimmer', true, furnitureKategorie.window[1])
-			guiSetProperty(furnitureKategorie.button[2], 'NormalTextColour', 'FFAAAAAA')
-			furnitureKategorie.button[3] = guiCreateButton(0.03, 0.75, 0.93, 0.18, 'Objekte für außen', true, furnitureKategorie.window[1])
-			guiSetProperty(furnitureKategorie.button[3], 'NormalTextColour', 'FFAAAAAA')
-			
-			if(getElementData(localPlayer,"Language")==1)then
-				guiSetText(furnitureKategorie.button[1],"Normal")
-				guiSetText(furnitureKategorie.button[2],"Bath")
-				guiSetText(furnitureKategorie.button[3],"Outside")
-			end
-			
-			addEventHandler('onClientGUIClick',furnitureKategorie.button[1],function()
-				showNormalObjectNumber = 1
-				showObject = createObject(showNormalObjectTabelle[showNormalObjectNumber][1],1723.720703125,-1663.48046875,36.38969039917,0,0,0)
-				setElementInterior(showObject,18)
-				showNormalObjects = true
-				createAllForObject()
-				destroyElement(furnitureKategorie.window[1])
-				showCursor(false)
-			end,false)
-			addEventHandler('onClientGUIClick',furnitureKategorie.button[2],function()
-				showBathObjectNumber = 1
-				showObject = createObject(showBathObjectsTabelle[showBathObjectNumber][1],1723.720703125,-1663.48046875,36.38969039917,0,0,0)
-				setElementInterior(showObject,18)
-				showBathObjects = true
-				createAllForObject()
-				destroyElement(furnitureKategorie.window[1])
-				showCursor(false)
-			end,false)
-			addEventHandler('onClientGUIClick',furnitureKategorie.button[3],function()
-				showOutdoorObjectNumber = 1
-				showObject = createObject(showOutsideObjectTabelle[showOutdoorObjectNumber][1],1723.720703125,-1663.48046875,36.38969039917,0,0,0)
-				setElementInterior(showObject,18)
-				showOutsideObjects = true
-				createAllForObject()
-				destroyElement(furnitureKategorie.window[1])
-				showCursor(false)
-			end,false)
-		end
-    end
+	if furnitureKategorieVisible then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+	furnitureKategorieVisible = true
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	addEventHandler("onClientRender", root, drawFurnitureKategorie)
+	addEventHandler("onClientClick", root, clickFurnitureKategorie)
 end
 
 function createAllForObject()
 	showChat(false)
-	setCameraMatrix(1712.9627685547,-1645.9943847656,35.840400695801,1713.4787597656,-1646.8331298828,35.666633605957,0,70)
-	addEventHandler('onClientRender',root,rotateShowObject)
+	setCameraMatrix(1712.9627685547, -1645.9943847656, 35.840400695801, 1713.4787597656, -1646.8331298828, 35.666633605957, 0, 70)
+	addEventHandler("onClientRender", root, rotateShowObject)
+	addEventHandler("onClientRender", root, drawObjectPreis)
 	toggleAllControls(false)
-	bindKey('enter','down',buyObject)
-	bindKey('space','down',closeObject)
-	bindKey('arrow_r','down',newobjectRight)
-	bindKey('arrow_l','down',newobjectLeft)
-	addEventHandler('onClientRender',root,drawObjectPreis)
+	bindKey("enter", "down", buyObject)
+	bindKey("space", "down", closeObject)
+	bindKey("arrow_r", "down", newobjectRight)
+	bindKey("arrow_l", "down", newobjectLeft)
+end
+
+local function getCurrentObject()
+	if showNormalObjects then return showNormalObjectTabelle[showNormalObjectNumber] end
+	if showBathObjects then return showBathObjectsTabelle[showBathObjectNumber] end
+	if showOutsideObjects then return showOutsideObjectTabelle[showOutdoorObjectNumber] end
+	return nil
 end
 
 function drawObjectPreis()
-	if(getElementData(localPlayer,'Language') == 0)then
-		if(showNormalObjects == true)then
-			dxDrawText('Preis: '..showNormalObjectTabelle[showNormalObjectNumber][2]..'\nEnter - Kaufen, Leertaste - Schließen\nRechte Pfeiltaste & Linke Pfeiltaste - Objekt wechseln', 376, 10, 1064, 206, tocolor(255, 255, 255, 255), 0.60, 'bankgothic', 'center', 'center', false, false, false, false, false)
-		elseif(showOutsideObjects == true)then
-			dxDrawText('Preis: '..showOutsideObjectTabelle[showOutdoorObjectNumber][2]..'\nEnter - Kaufen, Leertaste - Schließen\nRechte Pfeiltaste & Linke Pfeiltaste - Objekt wechseln', 376, 10, 1064, 206, tocolor(255, 255, 255, 255), 0.60, 'bankgothic', 'center', 'center', false, false, false, false, false)
-		elseif(showBathObjects == true)then
-			dxDrawText('Preis: '..showBathObjectsTabelle[showBathObjectNumber][2]..'\nEnter - Kaufen, Leertaste - Schließen\nRechte Pfeiltaste & Linke Pfeiltaste - Objekt wechseln', 376, 10, 1064, 206, tocolor(255, 255, 255, 255), 0.60, 'bankgothic', 'center', 'center', false, false, false, false, false)
-		end
-	else
-		if(showNormalObjects == true)then
-			dxDrawText('Price: '..showNormalObjectTabelle[showNormalObjectNumber][2]..'\nEnter - Buy, Space - Close\nArrow Right & Arrow Left - Switch object', 376, 10, 1064, 206, tocolor(255, 255, 255, 255), 0.60, 'bankgothic', 'center', 'center', false, false, false, false, false)
-		elseif(showOutsideObjects == true)then
-			dxDrawText('Preis: '..showOutsideObjectTabelle[showOutdoorObjectNumber][2]..'\nEnter - Buy, Space - Close\nArrow Right & Arrow Left - Switch object', 376, 10, 1064, 206, tocolor(255, 255, 255, 255), 0.60, 'bankgothic', 'center', 'center', false, false, false, false, false)
-		elseif(showBathObjects == true)then
-			dxDrawText('Preis: '..showBathObjectsTabelle[showBathObjectNumber][2]..'\nEnter - Buy, Space - Close\nArrow Right & Arrow Left - Switch object', 376, 10, 1064, 206, tocolor(255, 255, 255, 255), 0.60, 'bankgothic', 'center', 'center', false, false, false, false, false)
-		end
-	end
+	local object = getCurrentObject()
+	if not object then return end
+
+	local width = 430 * scale
+	local height = 52 * scale
+	local x = (sx - width) / 2
+	local y = 25 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 190), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(getText("Furniture11"):format(object[2]), x + 10 * scale, y, x + width - 10 * scale, y + height, tocolor(255, 255, 255, 255), 1, "default-bold", "center", "center", true, false, false)
 end
 
-local showObjectPickup = createPickup(1721.8173828125,-1652.5671386719,20.0625,3,1239,50)
-setElementInterior(showObjectPickup,18)
+local showObjectPickup = createPickup(1721.8173828125, -1652.5671386719, 20.0625, 3, 1239, 50)
+setElementInterior(showObjectPickup, 18)
 
-addEventHandler('onClientPickupHit',showObjectPickup,function(hit)
-	if(hit == localPlayer)then
+addEventHandler("onClientPickupHit", showObjectPickup, function(hit)
+	if hit == localPlayer then
 		openFurnitureKategorieWindow()
 	end
 end)
 
 function buyObject()
-	if(showNormalObjects == true)then
-		if(getPlayerMoney(localPlayer) >= showNormalObjectTabelle[showNormalObjectNumber][2])then
-			triggerServerEvent('buyObject',localPlayer,showNormalObjectTabelle[showNormalObjectNumber][1],showNormalObjectTabelle[showNormalObjectNumber][2])
-		else
-			if(getElementData(localPlayer,'Language') == 0)then
-				infobox('Du hast nicht genug Geld!',255,0,0)
-			else
-				infobox('You have not enough money!',255,0,0)
-			end
-		end
-	elseif(showBathObjects == true)then
-		if(getPlayerMoney(localPlayer) >= showBathObjectsTabelle[showBathObjectNumber][2])then
-			triggerServerEvent('buyObject',localPlayer,showBathObjectsTabelle[showBathObjectNumber][1],showBathObjectsTabelle[showBathObjectNumber][2])
-		else
-			if(getElementData(localPlayer,'Language') == 0)then
-				infobox('Du hast nicht genug Geld!',255,0,0)
-			else
-				infobox('You have not enough money!',255,0,0)
-			end
-		end
-	elseif(showOutsideObjects == true)then
-		if(getPlayerMoney(localPlayer) >= showOutsideObjectTabelle[showOutdoorObjectNumber][2])then
-			triggerServerEvent('buyObject',localPlayer,showOutsideObjectTabelle[showOutdoorObjectNumber][1],showOutsideObjectTabelle[showOutdoorObjectNumber][2])
-		else
-			if(getElementData(localPlayer,'Language') == 0)then
-				infobox('Du hast nicht genug Geld!',255,0,0)
-			else
-				infobox('You have not enough money!',255,0,0)
-			end
-		end
-	end
+	local object = getCurrentObject()
+	if not object then return end
+	triggerServerEvent("buyObject", localPlayer, object[1])
 end
 
 function closeObject()
-	unbindKey('enter','down',buyObject)
-	unbindKey('space','down',closeObject)
-	removeEventHandler('onClientRender',root,rotateShowObject)
-	unbindKey('arrow_r','down',newobjectRight)
-	unbindKey('arrow_l','down',newobjectLeft)
+	unbindKey("enter", "down", buyObject)
+	unbindKey("space", "down", closeObject)
+	unbindKey("arrow_r", "down", newobjectRight)
+	unbindKey("arrow_l", "down", newobjectLeft)
+	removeEventHandler("onClientRender", root, rotateShowObject)
+	removeEventHandler("onClientRender", root, drawObjectPreis)
 	toggleAllControls(true)
 	setCameraTarget(localPlayer)
-	destroyElement(showObject)
-	removeEventHandler('onClientRender',root,drawObjectPreis)
+	if isElement(showObject) then destroyElement(showObject) end
+	showObject = nil
 	showChat(true)
-	setElementData(localPlayer,'redfieldClick',false)
-	showNormalObjects = nil
-	showOutsideObjects = nil
-	showBathObjects = nil
+	setElementData(localPlayer, "redfieldClick", false)
+	showNormalObjects, showOutsideObjects, showBathObjects = false, false, false
 end
 
 function newobjectRight()
-	if(showNormalObjects == true)then
-		if(not(showNormalObjectNumber == 21))then
-			showNormalObjectNumber = showNormalObjectNumber + 1
-			setElementModel(showObject,showNormalObjectTabelle[showNormalObjectNumber][1])
-		end
-	elseif(showBathObjects == true)then
-		if(not(showBathObjectNumber == 4))then
-			showBathObjectNumber = showBathObjectNumber + 1
-			setElementModel(showObject,showBathObjectsTabelle[showBathObjectNumber][1])
-		end
-	elseif(showOutsideObjects == true)then
-		if(not(showOutdoorObjectNumber == 3))then
-			showOutdoorObjectNumber = showOutdoorObjectNumber + 1
-			setElementModel(showObject,showOutsideObjectTabelle[showOutdoorObjectNumber][1])
-		end
+	if not isElement(showObject) then return end
+
+	if showNormalObjects and showNormalObjectNumber < #showNormalObjectTabelle then
+		showNormalObjectNumber = showNormalObjectNumber + 1
+		setElementModel(showObject, showNormalObjectTabelle[showNormalObjectNumber][1])
+	elseif showBathObjects and showBathObjectNumber < #showBathObjectsTabelle then
+		showBathObjectNumber = showBathObjectNumber + 1
+		setElementModel(showObject, showBathObjectsTabelle[showBathObjectNumber][1])
+	elseif showOutsideObjects and showOutdoorObjectNumber < #showOutsideObjectTabelle then
+		showOutdoorObjectNumber = showOutdoorObjectNumber + 1
+		setElementModel(showObject, showOutsideObjectTabelle[showOutdoorObjectNumber][1])
 	end
 end
 
 function newobjectLeft()
-	if(showNormalObjects == true)then
-		if(not(showNormalObjectNumber == 1))then
-			showNormalObjectNumber = showNormalObjectNumber-1
-			setElementModel(showObject,showNormalObjectTabelle[showNormalObjectNumber][1])
-		end
-	elseif(showBathObjects == true)then
-		if(not(showBathObjectNumber == 1))then
-			showBathObjectNumber = showBathObjectNumber-1
-			setElementModel(showObject,showBathObjectsTabelle[showBathObjectNumber][1])
-		end
-	elseif(showOutsideObjects == true)then
-		if(not(showOutdoorObjectNumber == 1))then
-			showOutdoorObjectNumber = showOutdoorObjectNumber-1
-			setElementModel(showObject,showOutsideObjectTabelle[showOutdoorObjectNumber][1])
-		end
+	if not isElement(showObject) then return end
+
+	if showNormalObjects and showNormalObjectNumber > 1 then
+		showNormalObjectNumber = showNormalObjectNumber - 1
+		setElementModel(showObject, showNormalObjectTabelle[showNormalObjectNumber][1])
+	elseif showBathObjects and showBathObjectNumber > 1 then
+		showBathObjectNumber = showBathObjectNumber - 1
+		setElementModel(showObject, showBathObjectsTabelle[showBathObjectNumber][1])
+	elseif showOutsideObjects and showOutdoorObjectNumber > 1 then
+		showOutdoorObjectNumber = showOutdoorObjectNumber - 1
+		setElementModel(showObject, showOutsideObjectTabelle[showOutdoorObjectNumber][1])
 	end
 end
 
 function rotateShowObject()
-	local x,y,z = getElementRotation(showObject)
-	setElementRotation(showObject,x,y,z+1)
+	if not isElement(showObject) then return end
+	local x, y, z = getElementRotation(showObject)
+	setElementRotation(showObject, x, y, z + 1)
 end
 
 function createobject_func(id)
+	id = tonumber(id)
+	if not id or isElement(dropObjekt) then return end
+
 	showCursor(true)
-	local px,py,pz = getPedBonePosition(localPlayer,6)
-	bool,camX,camY,camZ,hit = processLineOfSight(px,py,pz,px,py,pz+20,true,true,false)
-	if(bool == false)then
-		camX,camY,camZ = px,py,pz+20
+
+	local px, py, pz = getPedBonePosition(localPlayer, 6)
+	local hit
+	hit, camX, camY, camZ = processLineOfSight(px, py, pz, px, py, pz + 20, true, true, false)
+
+	if not hit then
+		camX, camY, camZ = px, py, pz + 20
 	else
-		camZ = camZ-0.1
+		camZ = camZ - 0.1
 	end
-	setCameraMatrix(camX,camY,camZ,px,py,pz)
+
+	setCameraMatrix(camX, camY, camZ, px, py, pz)
+
 	local int = getElementInterior(localPlayer)
 	local dim = getElementDimension(localPlayer)
-	
-	dropObjekt = createObject(id,0,0,0)
-	setElementInterior(dropObjekt,int)
-	setElementDimension(dropObjekt,dim)
-	massDistance = getElementDistanceFromCentreOfMassToBaseOfModel(dropObjekt)
-	setElementCollisionsEnabled(dropObjekt,false)
-	addEventHandler('onClientRender',root,refreshObjectPosition)
-	addEventHandler('onClientClick',root,objectPosition)
-	setElementData(localPlayer,'redfieldClick',true)
-	bindKey('mouse_wheel_up','down',refreshObjectRotationRight)
-	bindKey('mouse_wheel_down','down',refreshObjectRotationLeft)
-	bindKey('enter','down',stopPlaceObject)
-	
-	if(getElementData(localPlayer,'Language') == 0)then
-		outputChatBox('Beweg die Maus, um das Objekt zu bewegen und das Mausrad um es zu drehen. Enter - Schließen, Linke/Rechte Maustaste - Objekt platzieren.',0,200,0)
-	else
-		outputChatBox('Move the object with your mouse and rotate it with your mouse wheel. Enter - Close, Left/Right Mouse - Place the object.',0,200,0)
-	end
-end
-addEvent('createobject',true)
-addEventHandler('createobject',root,createobject_func)
+	dropObjekt = createObject(id, px, py, pz)
 
-function objectPosition(button,state)
-	if(state == 'down')then
-		if(isElement(dropObjekt))then
-			removeEventHandler('onClientRender',root,refreshObjectPosition)
-			removeEventHandler('onClientClick',root,objectPosition)
-			placeObject()
-		end
+	if not isElement(dropObjekt) then
+		showCursor(false)
+		setCameraTarget(localPlayer)
+		return
 	end
+
+	setElementInterior(dropObjekt, int)
+	setElementDimension(dropObjekt, dim)
+	massDistance = getElementDistanceFromCentreOfMassToBaseOfModel(dropObjekt)
+	setElementCollisionsEnabled(dropObjekt, false)
+	addEventHandler("onClientRender", root, refreshObjectPosition)
+	addEventHandler("onClientClick", root, objectPosition)
+	setElementData(localPlayer, "redfieldClick", true)
+	bindKey("mouse_wheel_up", "down", refreshObjectRotationRight)
+	bindKey("mouse_wheel_down", "down", refreshObjectRotationLeft)
+	bindKey("enter", "down", stopPlaceObject)
+	infobox(getText("Furniture12"), 0, 200, 0)
+end
+
+addEvent("createobject", true)
+addEventHandler("createobject", root, createobject_func)
+
+function objectPosition(button, state)
+	if state ~= "down" or (button ~= "left" and button ~= "right") then return end
+	if not isElement(dropObjekt) then return end
+	removeEventHandler("onClientRender", root, refreshObjectPosition)
+	removeEventHandler("onClientClick", root, objectPosition)
+	placeObject()
 end
 
 function refreshObjectRotationRight()
-	x,y,z = getElementRotation(dropObjekt)
-	setElementRotation(dropObjekt,x,y,z+1)
+	if not isElement(dropObjekt) then return end
+	local x, y, z = getElementRotation(dropObjekt)
+	setElementRotation(dropObjekt, x, y, z + 1)
 end
 
 function refreshObjectRotationLeft()
-	x,y,z = getElementRotation(dropObjekt)
-	setElementRotation(dropObjekt,x,y,z-1)
+	if not isElement(dropObjekt) then return end
+	local x, y, z = getElementRotation(dropObjekt)
+	setElementRotation(dropObjekt, x, y, z - 1)
+end
+
+local function clearObjectPlacement()
+	unbindKey("mouse_wheel_up", "down", refreshObjectRotationRight)
+	unbindKey("mouse_wheel_down", "down", refreshObjectRotationLeft)
+	unbindKey("enter", "down", stopPlaceObject)
+	removeEventHandler("onClientRender", root, refreshObjectPosition)
+	removeEventHandler("onClientClick", root, objectPosition)
+	showCursor(false)
+	setCameraTarget(localPlayer)
+	setElementData(localPlayer, "redfieldClick", false)
 end
 
 function placeObject()
-	if(isElement(dropObjekt))then
-		setCameraTarget(localPlayer)
-			
-		local x,y,z = getElementPosition(dropObjekt)
-		local rx,ry,rz = getElementRotation(dropObjekt)
-		local model = getElementModel(dropObjekt)
-		local interior = getElementInterior(dropObjekt)
-		local dimension = getElementDimension(dropObjekt)
-		destroyElement(dropObjekt)
-			
-		triggerServerEvent('createNewObjectPlace',localPlayer,model,x,y,z,rx,ry,rz,interior,dimension)
-		unbindKey('mouse_wheel_up','down',refreshObjectRotationRight)
-		unbindKey('mouse_wheel_down','down',refreshObjectRotationLeft)
-			
-		showCursor(false)
-		setElementData(localPlayer,'redfieldClick',false)
-	end
+	if not isElement(dropObjekt) then return end
+
+	local x, y, z = getElementPosition(dropObjekt)
+	local rx, ry, rz = getElementRotation(dropObjekt)
+	local model = getElementModel(dropObjekt)
+	local interior = getElementInterior(dropObjekt)
+	local dimension = getElementDimension(dropObjekt)
+
+	destroyElement(dropObjekt)
+	dropObjekt = nil
+	clearObjectPlacement()
+	triggerServerEvent("createNewObjectPlace", localPlayer, model, x, y, z, rx, ry, rz, interior, dimension)
 end
 
 function stopPlaceObject()
-	unbindKey('mouse_wheel_up','down',refreshObjectRotationRight)
-	unbindKey('mouse_wheel_down','down',refreshObjectRotationLeft)
-	unbindKey('enter','down',stopPlaceObject)
-	removeEventHandler('onClientRender',root,refreshObjectPosition)
-	removeEventHandler('onClientClick',root,objectPosition)
-	destroyElement(dropObjekt)
-	showCursor(false)
-	setCameraTarget(localPlayer)
-	setElementData(localPlayer,'redfieldClick',false)
+	if isElement(dropObjekt) then destroyElement(dropObjekt) end
+	dropObjekt = nil
+	clearObjectPlacement()
 end
 
-higher = {}
- higher[638] = 0.6
- higher[970] = 0.5
- higher[17037] = 2.3
-
 function refreshObjectPosition()
-	local sx,sy,x,y,z = getCursorPosition()
-	local px,py,pz = camX,camY,camZ
-	blabla,nx,ny,nz,hit = processLineOfSight(px,py,pz,x,y,z,true,true,false)
-	
-	if(nz)then
-		nz = nz+3
-	end
-	
-	blabla,nx,ny,nz,hit = processLineOfSight(nx,ny,nz,x,y,z,true,true,false)
-	
-	if(not(blabla))then
-		nx,ny,nz = x,y,z
-	end
-	
-	if(higher[getElementModel(dropObjekt)])then
-	nz = nz+higher[getElementModel(dropObjekt)]end
+	if not isElement(dropObjekt) then return end
 
-	setElementPosition(dropObjekt,nx,ny,nz+massDistance)
+	local _, _, x, y, z = getCursorPosition()
+	if not x or not y or not z then return end
+
+	local hit, nx, ny, nz = processLineOfSight(camX, camY, camZ, x, y, z, true, true, false)
+	if nz then nz = nz + 3 end
+
+	if nx and ny and nz then
+		local hit2, hx, hy, hz = processLineOfSight(nx, ny, nz, x, y, z, true, true, false)
+		if hit2 then
+			nx, ny, nz = hx, hy, hz
+		else
+			nx, ny, nz = x, y, z
+		end
+	else
+		nx, ny, nz = x, y, z
+	end
+
+	local extra = higher[getElementModel(dropObjekt)] or 0
+	setElementPosition(dropObjekt, nx, ny, nz + massDistance + extra)
 end

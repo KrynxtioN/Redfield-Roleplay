@@ -1,141 +1,255 @@
-local Bankpin = {button = {},window = {},edit = {},label = {}}
+local sx, sy = guiGetScreenSize()
+local scale = math.min(sx / 1920, sy / 1080)
 
-function bankpinWindow()
-	if(not(isElement(Bankpin.window[1])))then
-		if(getElementData(localPlayer,'redfieldClick') == false)then
-			showCursor(true)
-			setElementData(localPlayer,'redfieldClick',true)
-		
-			Bankpin.window[1] = guiCreateStaticImage(0.40, 0.40, 0.21, 0.18, 'Images/Background.png', true)
+local bankMode = nil
+local bankEdit = nil
 
-			Bankpin.label[1] = guiCreateLabel(0.03, 0.16, 0.93, 0.14, 'Trage deinen Pin ein:', true, Bankpin.window[1])
-			guiSetFont(Bankpin.label[1], 'default-bold-small')
-			guiLabelSetHorizontalAlign(Bankpin.label[1], 'center', true)
-			guiLabelSetVerticalAlign(Bankpin.label[1], 'center')
-			Bankpin.edit[1] = guiCreateEdit(0.23, 0.29, 0.53, 0.15, '', true, Bankpin.window[1])
-			Bankpin.button[1] = guiCreateButton(0.15, 0.61, 0.71, 0.14, 'Einloggen', true, Bankpin.window[1])
-			guiSetProperty(Bankpin.button[1], 'NormalTextColour', 'FFAAAAAA')
-			Bankpin.button[2] = guiCreateButton(0.15, 0.80, 0.71, 0.14, 'Schließen', true, Bankpin.window[1])
-			guiSetProperty(Bankpin.button[2], 'NormalTextColour', 'FFAAAAAA')
-			
-			if(getElementData(localPlayer,'Language') == 1)then
-				guiSetText(Bankpin.label[1],'Your pin carrying a:')
-				guiSetText(Bankpin.button[1],'Login')
-				guiSetText(Bankpin.button[2],'Close')
-			end
-			
-			addEventHandler('onClientGUIClick',Bankpin.button[1],function()
-				local bankpin = getElementData(localPlayer,'Bankpin')
-				local bankpin2 = tonumber(guiGetText(Bankpin.edit[1]))
-				
-				if(bankpin == bankpin2)then
-					destroyElement(Bankpin.window[1])
-					atmWindow()
-				else
-					if(getElementData(localPlayer,'Language')==0)then
-						infobox('Der Bankpin ist nicht korrekt!',255,0,0)
-					else
-						infobox('The pin is not correct!',255,0,0)
-					end
-				end
-			end,false)
-			
-			addEventHandler('onClientGUIClick',Bankpin.button[2],function()
-				destroyElement(Bankpin.window[1])
-				showCursor(false)
-				setElementData(localPlayer,'redfieldClick',false)
-			end,false)
-		end
-    end
-end
-addEvent('bankpinWindow',true)
-addEventHandler('bankpinWindow',root,bankpinWindow)
-
-local Atm = {button = {},window = {},edit = {},label = {}}
-
-function atmWindow()
-	if(not(isElement(Atm.window[1])))then
-        Atm.window[1] = guiCreateStaticImage(0.40, 0.40, 0.21, 0.22, 'images/background.png', true)
-
-        Atm.label[1] = guiCreateLabel(0.04, 0.13, 0.93, 0.11, 'Kontostand: '..getElementData(localPlayer,'Bankmoney')..'$', true, Atm.window[1])
-        guiSetFont(Atm.label[1], 'default-bold-small')
-        guiLabelSetHorizontalAlign(Atm.label[1], 'center', true)
-        guiLabelSetVerticalAlign(Atm.label[1], 'center')
-        Atm.edit[1] = guiCreateEdit(0.23, 0.29, 0.53, 0.15, '', true, Atm.window[1])
-        Atm.button[1] = guiCreateButton(0.15, 0.65, 0.71, 0.12, 'Auszahlen', true, Atm.window[1])
-        guiSetProperty(Atm.button[1], 'NormalTextColour', 'FFAAAAAA')
-        Atm.button[2] = guiCreateButton(0.15, 0.49, 0.71, 0.12, 'Einzahlen', true, Atm.window[1])
-        guiSetProperty(Atm.button[2], 'NormalTextColour', 'FFAAAAAA')
-        Atm.button[3] = guiCreateButton(0.15, 0.82, 0.71, 0.12, 'Schließen', true, Atm.window[1])
-        guiSetProperty(Atm.button[3], 'NormalTextColour', 'FFAAAAAA')
-		
-		if(getElementData(localPlayer,'Language') == 1)then
-			guiSetText(Atm.label[1],'Your account balance '..getElementData(localPlayer,'Bankmoney')..'$')
-			guiSetText(Atm.button[1],'Pay out')
-			guiSetText(Atm.button[2],'Pay in')
-			guiSetText(Atm.button[3],'Close')
-		end
-		
-		addEventHandler('onClientGUIClick',Atm.button[1],function()
-			local auszahlenSumme = guiGetText(Atm.edit[1])
-			local bankmoney = getElementData(localPlayer,'Bankmoney')
-			
-			if(auszahlenSumme == '')then
-				if(getElementData(localPlayer,'Language')==0)then
-					infobox('Trag eine Summe ein!',255,0,0)
-				else
-					infobox('Please provide a sum!',255,0,0)
-				end
-			else
-				if(bankmoney >= tonumber(auszahlenSumme))then
-					triggerServerEvent('auszahlenServer',localPlayer,auszahlenSumme)
-				else
-					if(getElementData(localPlayer,'Language') == 0)then
-						infobox('So viel Geld befindet sich nicht auf deinem Konto!',255,0,0)
-					else
-						infobox('You have not enough money on your account!',255,0,0)
-					end
-				end
-			end
-		end,false)
-		
-		addEventHandler('onClientGUIClick',Atm.button[2],function()
-			local einzahlenSumme = guiGetText(Atm.edit[1])
-			local money = getPlayerMoney(localPlayer)
-			
-			if(einzahlenSumme == '')then
-				if(getElementData(localPlayer,'Language') == 0)then
-					infobox('Trage eine Summe ein!',255,0,0)
-				else
-					infobox('Please provide a sum!',255,0,0)
-				end
-			else
-				if(money >= tonumber(einzahlenSumme))then
-					triggerServerEvent('einzahlenServer',localPlayer,einzahlenSumme)
-				else 
-					if(getElementData(localPlayer,'Language') == 0)then
-						infobox('So viel Geld hast du nicht dabei!',255,0,0)
-					else
-						infobox('You have not enough money!',255,0,0)
-					end
-				end
-			end
-		end,false)
-		
-		addEventHandler('onClientGUIClick',Atm.button[3],function()
-			destroyElement(Atm.window[1])
-			showCursor(false)
-			setElementData(localPlayer,'redfieldClick',false)
-		end,false)
-    end
+local function isCursorOnElement(x, y, width, height)
+	if not isCursorShowing() then return false end
+	local cx, cy = getCursorPosition()
+	if not cx or not cy then return false end
+	cx, cy = cx * sx, cy * sy
+	return cx >= x and cx <= x + width and cy >= y and cy <= y + height
 end
 
-function updateMoneyLabel()
-	if(getElementData(localPlayer,'Language') == 0)then
-		guiSetText(Atm.label[1],'Dein Kontostand: '..getElementData(localPlayer,'Bankmoney')..'$')
-	else
-		guiSetText(Atm.label[1],'Your account balance '..getElementData(localPlayer,'Bankmoney')..'$')
+local function getBankLayout()
+	local width = 450 * scale
+	local height = bankMode == "pin" and 300 * scale or 410 * scale
+	local x, y = (sx - width) / 2, (sy - height) / 2
+	local padding = 15 * scale
+	return x, y, width, height, padding
+end
+
+local function createBankEdit(masked)
+	if isElement(bankEdit) then destroyElement(bankEdit) end
+	bankEdit = guiCreateEdit(-1, -1, 1, 1, "", true)
+	guiEditSetMaxLength(bankEdit, 10)
+	guiEditSetMasked(bankEdit, masked == true)
+	guiSetAlpha(bankEdit, 0)
+	guiBringToFront(bankEdit)
+	guiFocus(bankEdit)
+end
+
+local function getBankEditText()
+	if not isElement(bankEdit) then return "" end
+	return guiGetText(bankEdit)
+end
+
+local function clearBankEdit()
+	if isElement(bankEdit) then
+		guiSetText(bankEdit, "")
+		guiFocus(bankEdit)
 	end
 end
-addEvent('updateMoneyLabel',true)
-addEventHandler('updateMoneyLabel',root,updateMoneyLabel)
+
+local function drawButton(text, x, y, width, height)
+	local hover = isCursorOnElement(x, y, width, height)
+	dxDrawRectangle(x, y, width, height, hover and tocolor(0, 100, 200, 255) or tocolor(30, 30, 30, 255), false)
+	dxDrawRectangle(x, y + height - 2 * scale, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text, x + 8 * scale, y, x + width - 8 * scale, y + height, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+end
+
+local function drawInput(x, y, width, height, masked)
+	local text = getBankEditText()
+	if masked and text ~= "" then text = string.rep("*", utf8.len(text) or #text) end
+
+	local cursor = ""
+	if isElement(bankEdit) and getTickCount() % 1000 < 500 then
+		cursor = "|"
+	end
+
+	dxDrawRectangle(x, y, width, height, tocolor(20, 20, 20, 255), false)
+	dxDrawRectangle(x, y + height - 2 * scale, width, 2 * scale, tocolor(0, 100, 200, 255), false)
+	dxDrawText(text .. cursor, x + 12 * scale, y, x + width - 12 * scale, y + height, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "left", "center", true)
+end
+
+local function drawBankWindow()
+	if not bankMode then return end
+	local x, y, width, height, padding = getBankLayout()
+	local contentWidth = width - padding * 2
+	local inputWidth = contentWidth
+	local inputHeight = 42 * scale
+	local buttonHeight = 42 * scale
+
+	dxDrawRectangle(x, y, width, height, tocolor(0, 0, 0, 240), false)
+	dxDrawRectangle(x, y, width, 3 * scale, tocolor(0, 100, 200, 255), false)
+
+	if bankMode == "pin" then
+		local textY = y + 20 * scale
+		local textHeight = 65 * scale
+		local inputY = y + 100 * scale
+		local buttonY = y + 165 * scale
+
+		dxDrawRectangle(x + padding, textY, contentWidth, textHeight, tocolor(20, 20, 20, 255), false)
+		dxDrawRectangle(x + padding, textY, 3 * scale, textHeight, tocolor(0, 100, 200, 255), false)
+		dxDrawText(getText("Bank1"), x + padding + 15 * scale, textY, x + width - padding - 15 * scale, textY + textHeight, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true, true)
+
+		drawInput(x + padding, inputY, inputWidth, inputHeight, true)
+		drawButton(getText("Bank2"), x + padding, buttonY, contentWidth, buttonHeight)
+		drawButton(getText("Bank3"), x + padding, buttonY + buttonHeight + 10 * scale, contentWidth, buttonHeight)
+	else
+		local bankmoney = tonumber(getElementData(localPlayer, "Bankmoney")) or 0
+		local infoY = y + 20 * scale
+		local infoHeight = 80 * scale
+		local inputY = y + 120 * scale
+		local buttonY = y + 182 * scale
+
+		dxDrawRectangle(x + padding, infoY, contentWidth, infoHeight, tocolor(20, 20, 20, 255), false)
+		dxDrawRectangle(x + padding, infoY, 3 * scale, infoHeight, tocolor(0, 100, 200, 255), false)
+		dxDrawText(getText("Bank7"):format(bankmoney), x + padding + 15 * scale, infoY + 8 * scale, x + width - padding - 15 * scale, infoY + 40 * scale, tocolor(255, 255, 255, 255), 1 * scale, "default-bold", "center", "center", true)
+
+		drawInput(x + padding, inputY, inputWidth, inputHeight, false)
+		drawButton(getText("Bank9"), x + padding, buttonY, contentWidth, buttonHeight)
+		drawButton(getText("Bank8"), x + padding, buttonY + buttonHeight + 10 * scale, contentWidth, buttonHeight)
+		drawButton(getText("Bank3"), x + padding, buttonY + (buttonHeight + 10 * scale) * 2, contentWidth, buttonHeight)
+	end
+end
+
+function closeBankWindow(sendServer)
+	if not bankMode and not isElement(bankEdit) then return end
+
+	bankMode = nil
+	if isElement(bankEdit) then destroyElement(bankEdit) end
+	bankEdit = nil
+
+	removeEventHandler("onClientRender", root, drawBankWindow)
+	removeEventHandler("onClientClick", root, bankWindowClick)
+	guiSetInputEnabled(false)
+	showCursor(false)
+	setElementData(localPlayer, "redfieldClick", false)
+
+	if sendServer then
+		triggerServerEvent("closeBankSession", localPlayer)
+	end
+end
+
+local function submitBankPin()
+	local pin = getBankEditText()
+
+	if pin == "" then
+		infobox(getText("Bank4"), 255, 0, 0)
+		return
+	end
+
+	if not tonumber(pin) then
+		infobox(getText("Bank5"), 255, 0, 0)
+		return
+	end
+
+	triggerServerEvent("checkBankPin", localPlayer, pin)
+end
+
+local function getBankAmount()
+	local text = getBankEditText()
+	local amount = tonumber(text)
+
+	if text == "" then
+		infobox(getText("Bank10"), 255, 0, 0)
+		return nil
+	end
+
+	if not amount or amount <= 0 or amount ~= math.floor(amount) then
+		infobox(getText("Bank11"), 255, 0, 0)
+		return nil
+	end
+
+	return amount
+end
+
+function bankWindowClick(button, state)
+	if not bankMode or button ~= "left" or state ~= "down" then return end
+
+	local x, y, width, height, padding = getBankLayout()
+	local contentWidth = width - padding * 2
+	local inputHeight = 42 * scale
+	local buttonHeight = 42 * scale
+
+	if bankMode == "pin" then
+		local inputY = y + 100 * scale
+		local buttonY = y + 165 * scale
+
+		if isCursorOnElement(x + padding, inputY, contentWidth, inputHeight) then
+			if isElement(bankEdit) then guiFocus(bankEdit) end
+			return
+		end
+
+		if isCursorOnElement(x + padding, buttonY, contentWidth, buttonHeight) then
+			submitBankPin()
+			return
+		end
+
+		if isCursorOnElement(x + padding, buttonY + buttonHeight + 10 * scale, contentWidth, buttonHeight) then
+			closeBankWindow(true)
+		end
+	else
+		local inputY = y + 120 * scale
+		local buttonY = y + 182 * scale
+
+		if isCursorOnElement(x + padding, inputY, contentWidth, inputHeight) then
+			if isElement(bankEdit) then guiFocus(bankEdit) end
+			return
+		end
+
+		if isCursorOnElement(x + padding, buttonY, contentWidth, buttonHeight) then
+			local amount = getBankAmount()
+			if amount then triggerServerEvent("einzahlenServer", localPlayer, amount) end
+			return
+		end
+
+		if isCursorOnElement(x + padding, buttonY + buttonHeight + 10 * scale, contentWidth, buttonHeight) then
+			local amount = getBankAmount()
+			if amount then triggerServerEvent("auszahlenServer", localPlayer, amount) end
+			return
+		end
+
+		if isCursorOnElement(x + padding, buttonY + (buttonHeight + 10 * scale) * 2, contentWidth, buttonHeight) then
+			closeBankWindow(true)
+		end
+	end
+end
+
+function bankpinWindow()
+	if bankMode then return end
+	if getElementData(localPlayer, "redfieldClick") == true then return end
+
+	bankMode = "pin"
+	showCursor(true)
+	setElementData(localPlayer, "redfieldClick", true)
+	createBankEdit(true)
+	guiSetInputEnabled(true)
+	addEventHandler("onClientRender", root, drawBankWindow)
+	addEventHandler("onClientClick", root, bankWindowClick)
+end
+addEvent("bankpinWindow", true)
+addEventHandler("bankpinWindow", root, bankpinWindow)
+
+function atmWindow()
+	bankMode = "atm"
+	createBankEdit(false)
+	guiSetInputEnabled(true)
+end
+
+addEvent("bankPinCorrect", true)
+addEventHandler("bankPinCorrect", root, function()
+	if bankMode ~= "pin" then return end
+	if isElement(bankEdit) then destroyElement(bankEdit) end
+	bankEdit = nil
+	atmWindow()
+end)
+
+addEvent("bankPinWrong", true)
+addEventHandler("bankPinWrong", root, function()
+	infobox(getText("Bank6"), 255, 0, 0)
+	clearBankEdit()
+end)
+
+function updateMoneyLabel()
+	if bankMode ~= "atm" then return end
+	clearBankEdit()
+end
+addEvent("updateMoneyLabel", true)
+addEventHandler("updateMoneyLabel", root, updateMoneyLabel)
+
+addEventHandler("onClientPlayerWasted", localPlayer, function()
+	closeBankWindow(true)
+end)

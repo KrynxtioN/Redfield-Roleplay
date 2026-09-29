@@ -1,9 +1,6 @@
 local screenX,screenY = guiGetScreenSize()
 local screenSource = dxCreateScreenSource(screenX,screenY)
-
-addEventHandler('onClientResourceStart',getResourceRootElement(getThisResource()),function()
-	blackWhiteShader = dxCreateShader('Shader/Blackwhite.fx')
-end)
+local blackWhiteShader = dxCreateShader('Shader/Blackwhite.fx')
 
 function blackWhiteScreen()
     if(blackWhiteShader)then
