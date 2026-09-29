@@ -1,0 +1,22 @@
+<map edf:definitions="editor_main">
+    <object id="object (roadworkbarrier1) (1)" breakable="false" interior="0" alpha="255" model="1228" doublesided="false" scale="1" dimension="0" posX="-204.60001" posY="1080.7" posZ="19.2" rotX="0" rotY="0" rotZ="270"></object>
+    <object id="object (roadworkbarrier1) (2)" breakable="false" interior="0" alpha="255" model="1228" doublesided="false" scale="1" dimension="0" posX="-202.8" posY="1080.69995" posZ="19.2" rotX="0" rotY="0" rotZ="270"></object>
+    <object id="object (roadworkbarrier1) (3)" breakable="false" interior="0" alpha="255" model="1228" doublesided="false" scale="1" dimension="0" posX="-200.89999" posY="1081.5" posZ="19.2" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (roadworkbarrier1) (4)" breakable="false" interior="0" alpha="255" model="1228" doublesided="false" scale="1" dimension="0" posX="-200.89999" posY="1083.3" posZ="19.2" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (roadworkbarrier1) (5)" breakable="false" interior="0" alpha="255" model="1228" doublesided="false" scale="1" dimension="0" posX="-200.89999" posY="1085.1" posZ="19.2" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (roadworkbarrier1) (6)" breakable="false" interior="0" alpha="255" model="1228" doublesided="false" scale="1" dimension="0" posX="-200.89999" posY="1086.9" posZ="19.2" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (strtbarrier01) (1)" breakable="true" interior="0" alpha="255" model="1237" doublesided="false" scale="1" dimension="0" posX="-201.60001" posY="1081.3" posZ="18.7" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (Barrierm) (1)" breakable="false" interior="0" alpha="255" model="1282" doublesided="false" scale="1" dimension="0" posX="-201.2" posY="1088.7" posZ="19.4" rotX="0" rotY="0" rotZ="11"></object>
+    <object id="object (Barrierm) (2)" breakable="false" interior="0" alpha="255" model="1282" doublesided="false" scale="1" dimension="0" posX="-205.10001" posY="1092.6" posZ="19.4" rotX="0" rotY="0" rotZ="78.997"></object>
+    <object id="object (DYN_MESH_1) (1)" breakable="false" interior="0" alpha="255" model="1411" doublesided="false" scale="1" dimension="0" posX="-209.39999" posY="1090.5" posZ="20.4" rotX="0" rotY="0" rotZ="270"></object>
+    <object id="object (Barrierm) (3)" breakable="false" interior="0" alpha="255" model="1282" doublesided="false" scale="1" dimension="0" posX="-201.40039" posY="1089.7002" posZ="19.4" rotX="0" rotY="0" rotZ="10.997"></object>
+    <object id="object (strtbarrier01) (2)" breakable="true" interior="0" alpha="255" model="1237" doublesided="false" scale="1" dimension="0" posX="-204.2" posY="1092.5" posZ="18.7" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (strtbarrier01) (3)" breakable="true" interior="0" alpha="255" model="1237" doublesided="false" scale="1" dimension="0" posX="-201.7998" posY="1090.7002" posZ="18.7" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (Gen_doorSHOP01) (1)" breakable="true" interior="0" alpha="255" model="1493" doublesided="false" scale="1" dimension="0" posX="-207.5" posY="1087.3" posZ="18.8" rotX="0" rotY="0" rotZ="316.5"></object>
+    <object id="object (Gen_doorSHOP01) (2)" breakable="true" interior="0" alpha="255" model="1493" doublesided="false" scale="1" dimension="0" posX="-207.5" posY="1087.3" posZ="16.3" rotX="0" rotY="0" rotZ="316.5"></object>
+    <object id="object (tall_fence) (1)" breakable="true" interior="0" alpha="0" model="974" doublesided="false" scale="1" dimension="0" posX="-205.3" posY="1080.7" posZ="16.8" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (tall_fence) (3)" breakable="true" interior="0" alpha="0" model="974" doublesided="false" scale="1" dimension="0" posX="-200.89999" posY="1084.3" posZ="16.8" rotX="0" rotY="0" rotZ="90"></object>
+    <object id="object (tall_fence) (4)" breakable="true" interior="0" alpha="0" model="974" doublesided="false" scale="1" dimension="0" posX="-200.89999" posY="1084" posZ="16.8" rotX="0" rotY="0" rotZ="90"></object>
+    <object id="object (DYN_ROADBARRIER_2) (2)" breakable="false" interior="0" alpha="255" model="1424" doublesided="false" scale="1" dimension="0" posX="-208.60001" posY="1092.9" posZ="19.3" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (strtbarrier01) (4)" breakable="true" interior="0" alpha="255" model="1237" doublesided="false" scale="1" dimension="0" posX="-206.39999" posY="1092.8" posZ="18.7" rotX="0" rotY="0" rotZ="0"></object>
+</map>

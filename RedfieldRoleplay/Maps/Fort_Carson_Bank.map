@@ -1,0 +1,9 @@
+<map edf:definitions="editor_main">
+    <object id="object (sw_bankbits) (1)" breakable="true" interior="0" alpha="255" model="13007" doublesided="false" scale="1" dimension="1" posX="-172.2" posY="1132.6" posZ="6.3" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (ab_casdorLok) (1)" breakable="true" interior="0" alpha="255" model="3089" doublesided="false" scale="1" dimension="1" posX="-179.2" posY="1140" posZ="5.6" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (imy_la_door) (1)" breakable="true" interior="0" alpha="255" model="3109" doublesided="false" scale="1" dimension="1" posX="-162.8" posY="1129" posZ="5.5" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (CJ_SPORTS_WALL) (1)" breakable="true" interior="0" alpha="255" model="2395" doublesided="false" scale="1" dimension="1" posX="-181" posY="1140" posZ="4.2" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (wglasssmash) (1)" breakable="true" interior="0" alpha="255" model="1649" doublesided="false" scale="1" dimension="1" posX="-176.89999" posY="1140" posZ="6.2" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (CJ_AIRPRT_BAR) (1)" breakable="true" interior="0" alpha="255" model="2773" doublesided="false" scale="1" dimension="1" posX="-175.8" posY="1130.2" posZ="5.1" rotX="0" rotY="0" rotZ="0"></object>
+    <object id="object (CJ_AIRPRT_BAR) (2)" breakable="true" interior="0" alpha="255" model="2773" doublesided="false" scale="1" dimension="1" posX="-174.3" posY="1129.3" posZ="5.1" rotX="0" rotY="0" rotZ="0"></object>
+</map>

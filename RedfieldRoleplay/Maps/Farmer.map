@@ -1,0 +1,16 @@
+<map edf:definitions="editor_main">
+    <object id="object (desn2_stripsigs1) (1)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1068.9" posY="-1286.3" posZ="130.10001" rotX="0" rotY="0" rotZ="36"></object>
+    <object id="object (desn2_stripsigs1) (2)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1081.9" posY="-1285.3" posZ="130.10001" rotX="0" rotY="0" rotZ="343.997"></object>
+    <object id="object (desn2_stripsigs1) (3)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1072.2" posY="-1267.4" posZ="130.10001" rotX="0" rotY="0" rotZ="39.993"></object>
+    <object id="object (desn2_stripsigs1) (4)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1070.7" posY="-1277.3" posZ="130.10001" rotX="0" rotY="0" rotZ="325.99"></object>
+    <object id="object (desn2_stripsigs1) (5)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1076.8" posY="-1259" posZ="130.10001" rotX="0" rotY="0" rotZ="227.987"></object>
+    <object id="object (desn2_stripsigs1) (6)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1099.4" posY="-1258.4" posZ="130.10001" rotX="0" rotY="0" rotZ="301.997"></object>
+    <object id="object (desn2_stripsigs1) (7)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1094.5" posY="-1286.2" posZ="130.10001" rotX="0" rotY="0" rotZ="59.992"></object>
+    <object id="object (desn2_stripsigs1) (8)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1086.6" posY="-1271.2" posZ="130.10001" rotX="0" rotY="0" rotZ="299.983"></object>
+    <object id="object (desn2_stripsigs1) (9)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1097.2" posY="-1276" posZ="130.10001" rotX="0" rotY="0" rotZ="211.986"></object>
+    <object id="object (desn2_stripsigs1) (10)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1104.4" posY="-1265.6" posZ="130.10001" rotX="0" rotY="0" rotZ="149.982"></object>
+    <object id="object (desn2_stripsigs1) (11)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1115" posY="-1258.4" posZ="130.10001" rotX="0" rotY="0" rotZ="301.992"></object>
+    <object id="object (desn2_stripsigs1) (12)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1106.1" posY="-1285.1" posZ="130.10001" rotX="0" rotY="0" rotZ="123.981"></object>
+    <object id="object (desn2_stripsigs1) (13)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1117.2" posY="-1279.4" posZ="130.10001" rotX="0" rotY="0" rotZ="31.981"></object>
+    <object id="object (desn2_stripsigs1) (14)" breakable="true" interior="0" alpha="255" model="16442" doublesided="false" scale="1" dimension="0" posX="-1116.5" posY="-1268.4" posZ="130.10001" rotX="0" rotY="0" rotZ="301.992"></object>
+</map>
