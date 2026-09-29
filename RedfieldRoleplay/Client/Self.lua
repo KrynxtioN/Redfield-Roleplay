@@ -255,7 +255,7 @@ function clickSelf(button, state)
 		if spawn.house then
 			triggerServerEvent("SpawnImHaus", localPlayer)
 		else
-			triggerServerEvent("changeSpawn", localPlayer, spawn.x, spawn.y, spawn.z, spawn.int)
+			triggerServerEvent("changeSpawn", localPlayer, entry.id)
 		end
 		return
 	end
