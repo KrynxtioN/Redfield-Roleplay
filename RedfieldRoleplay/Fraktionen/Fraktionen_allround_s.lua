@@ -303,21 +303,39 @@ addEventHandler("onPickupHit", surenosClothes, clothesMarkerHit)
 addEventHandler("onPickupHit", ballasClothes, clothesMarkerHit)
 addEventHandler("onPickupHit", reporterClothes, clothesMarkerHit)
 
-function changeSpawn(x, y, z, interior)
+local selfSpawns = {
+	[1] = {x = -204.96250915527, y = 1212.2875976563, z = 19.7421875, interior = 0},
+	[3] = {faction = 1, x = 251.93380737305, y = 70.434516906738, z = 1003.640625, interior = 6},
+	[4] = {faction = 2, x = -2160.41796875, y = 638.86529541016, z = 1057.5860595703, interior = 1},
+	[5] = {faction = 3, x = -226.13352966309, y = 1410.9614257813, z = 27.7734375, interior = 18},
+	[6] = {faction = 4, x = -2022.2545166016, y = -114.60018157959, z = 1035.171875, interior = 3},
+	[7] = {faction = 5, x = 963.08654785156, y = 2102.0639648438, z = 1011.02734375, interior = 1},
+	[8] = {faction = 6, x = 325.65753173828, y = 1124.7043457031, z = 1083.8828125, interior = 5}
+}
+
+function changeSpawn(spawnId)
 	local player = client
 	if not isElement(player) or getElementData(player, "loggedin") ~= 1 then return end
-	x, y, z, interior = tonumber(x), tonumber(y), tonumber(z), tonumber(interior)
-	if not x or not y or not z or not interior then return end
-	if interior < 0 or interior > 255 then return end
-	local px, py, pz = getElementPosition(player)
-	if getElementInterior(player) ~= interior or getDistanceBetweenPoints3D(px, py, pz, x, y, z) > 10 then
+
+	spawnId = tonumber(spawnId)
+	if not spawnId or spawnId ~= math.floor(spawnId) then return end
+
+	local spawn = selfSpawns[spawnId]
+	if not spawn then
 		infobox_func(player, getText(player, "FactionS23"), 255, 0, 0)
 		return
 	end
-	setElementData(player, "SpawnX", x)
-	setElementData(player, "SpawnY", y)
-	setElementData(player, "SpawnZ", z)
-	setElementData(player, "Interior", interior)
+
+	local faction = tonumber(getElementData(player, "Fraktion")) or 0
+	if spawn.faction and spawn.faction ~= faction then
+		infobox_func(player, getText(player, "FactionS23"), 255, 0, 0)
+		return
+	end
+
+	setElementData(player, "SpawnX", spawn.x)
+	setElementData(player, "SpawnY", spawn.y)
+	setElementData(player, "SpawnZ", spawn.z)
+	setElementData(player, "Interior", spawn.interior)
 	if (tonumber(getElementData(player, "AchSpawn")) or 0) == 0 then
 		setElementData(player, "AchSpawn", 1)
 		achievementInfo(player)
