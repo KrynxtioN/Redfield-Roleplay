@@ -168,13 +168,6 @@ Redfield Roleplay includes several additional systems:
 - Real-time synchronization
 - German and English language support
 
-## 🌍 Languages
-
-The gamemode supports:
-
-- 🇩🇪 German
-- 🇬🇧 English
-
 ## ⚙️ Installation
 
 1. Place the Redfield Roleplay resource inside your MTA server's `resources` directory.
